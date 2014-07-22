@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
   StdCtrls, ExtCtrls,
-  Process;
+  Windows;  // For TProcess
 
 type
 
@@ -30,9 +30,40 @@ type
     procedure FormShow(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
       private
-    { private declarations }
+    { Private declarations }
   public
-    { public declarations }
+    { Public declarations }
+  end;
+
+{
+ TProcess is a simple non-visual component which allows you to launch processes.
+ It encapsulates the CreateProcess API call.
+ TProcess by Pablo Pissanetzky pablo@neosoft.com http://www.neosoft.com/~pablo
+}
+
+  TShowWindow = ( swHide , swMaximize , swMinimize , swRestore , swShow ,
+    swShowDefault , swShowMaximized , swShowMinimized ,
+    swShowMinNoActive , swShowNA , swShowNoActivate , swShowNormal );
+
+  TProcessEvent = procedure ( Sender : TObject; ExitCode : DWord ) of object;
+
+  TProcess = class(TComponent)
+  private
+    FCommand : string;
+    FShowWindow : TShowWindow;
+    FDirectory : string;
+    FWait : Boolean;
+    FOnFinished : TProcessEvent;
+  protected
+  public
+    constructor Create( AOwner : TComponent );
+    procedure Execute;
+  published
+    property Command : string read FCommand write FCommand;
+    property Directory : string read FDirectory write FDirectory;
+    property ShowWindow : TShowWindow read FShowWindow write FShowWindow;
+    property Wait : Boolean read FWait write FWait;
+    property OnFinished : TProcessEvent read FOnFinished write FOnFinished;
   end;
 
 var
@@ -80,7 +111,11 @@ var
   PROCEDURE MATRIX_TOOLBOX_CONVERSION_ERROR;
   PROCEDURE RAW_POINTS_ERROR;
 
+  // TProcess
+  procedure Register;
+
 implementation
+{ ---------------------------------------------------------- }
 uses
 AMP8,Amp8form,TYPE8,VAR8,VAREXT8;
 
@@ -110,6 +145,96 @@ var
   ext_mcad_str:string=default_mcad_ext;
 
   CONFIG:TEXTFile;
+{***************************************************************************}
+{***************************************************************************}
+{***************************************************************************}
+// TProcess - as is
+
+const ShowWindowValues : array [ 0..11 ] of integer =
+  ( sw_Hide , sw_Maximize , sw_Minimize , sw_Restore , sw_Show ,
+    sw_ShowDefault , sw_ShowMaximized , sw_ShowMinimized ,
+    sw_ShowMinNoActive , sw_ShowNA , sw_ShowNoActivate , sw_ShowNormal );
+
+type
+
+  TProcessThread = class( TThread )
+  private
+    FProcess : TProcess;
+  protected
+    procedure Execute; override;
+  public
+    constructor CreateThread( Process : TProcess );
+  end;
+
+
+procedure Register;
+begin
+  RegisterComponents('Samples', [TProcess]);
+end;
+
+constructor TProcess.Create( AOwner : TComponent );
+begin
+  inherited Create( AOwner );
+  FShowWindow := swShowNormal;
+  FWait := False;
+end;
+
+procedure TProcess.Execute;
+begin
+  TProcessThread.CreateThread( Self );
+end;
+
+//------------------------------------------------------------------------------
+//  TProcessThread
+
+constructor TProcessThread.CreateThread( Process : TProcess );
+begin
+  inherited Create( True );
+  FProcess := Process;
+  FreeOnTerminate := True;
+  Resume;
+end;
+
+procedure TProcessThread.Execute;
+var
+  StartupInfo : TStartupInfo;
+  ProcessInfo : TProcessInformation;
+  ExitCode : DWord;
+  Directory : PChar;
+begin
+  FillChar( StartupInfo , SizeOf( StartupInfo ) , 0 );
+  with StartupInfo do
+    begin
+      cb := SizeOf( StartupInfo );
+      dwFlags := startf_UseShowWindow;
+      wShowWindow := ShowWindowValues[ Ord( FProcess.ShowWindow ) ];
+    end;
+  ExitCode := 0;
+  FProcess.Directory := Trim( FProcess.Directory );
+  if Length( FProcess.Directory ) = 0 then
+    Directory := nil
+  else
+    Directory := PChar( FProcess.Directory );
+
+  if CreateProcess( nil , PChar( FProcess.Command ) , nil , nil , False ,
+    NORMAL_PRIORITY_CLASS , nil , Directory ,
+    StartupInfo , ProcessInfo ) then
+    begin
+      if FProcess.Wait then
+        begin
+          WaitForSingleObject( ProcessInfo.hProcess , Infinite );
+          GetExitCodeProcess( ProcessInfo.hProcess , ExitCode );
+          if Assigned( FProcess.FOnFinished ) then
+            FProcess.FOnFinished( FProcess , ExitCode );
+        end;
+      CloseHandle( ProcessInfo.hProcess );
+      CloseHandle( ProcessInfo.hThread );
+    end;
+end;
+
+
+
+
 {***************************************************************************}
 {***************************************************************************}
 {***************************************************************************}
@@ -626,25 +751,45 @@ end;
  ***************************************************************************}
 
 procedure Run_Nutmeg;
-
+var
+ SPICE_CommandLine:string; // Required by TProcess
+ SPICE_Dir:string;         // Required by TProcess
 begin
 
+{    if FileExists(SPICESTR) then begin
       INFO('$RAW SPICE:' + SPICESTR);
+      * SPICESTR might be a command - File check will fail - this check is removed
+}
       NUTMEGSTR:=Copy(OUTSTR,1,POS('.',OUTSTR)-1)+ext_nut_str;
       if (FileExists(NUTMEGSTR)) then begin
         INFO('$RAW NUTMEG:' + NUTMEGSTR);
         // Now we will create the TProcess object, and assign it to the var AProcess.
         SpiceProcess := TProcess.Create(nil);
         // Tell the new AProcess what the command to execute is.
-        SpiceProcess.CommandLine := SPICESTR +' '+NUTMEGSTR;
-        // We will define an option for when the program is run. This option will make sure that our program
-        // does not continue until the program we will launch
-        // has stopped running.
-        // AProcess.Options := AProcess.Options + [poWaitOnExit];
-        // Now that AProcess knows what the commandline is we will run it.
+        // But this must be set differently for TProcess defined here for Delphi 3
+        SPICE_CommandLine := SPICESTR + ' ' + NUTMEGSTR;
+        // should be exexcuted with full path to SPICE in current data folder
+        SPICE_Dir := ExtractFileDir(NUTMEGSTR);
+        // SPICE_Dir := ExtractFileDir(SPICE_CommandLine);
+        SpiceProcess.Command := SPICE_CommandLine;
+        SpiceProcess.Directory := SPICE_Dir;
+{ Wait : Boolean
+  If set to true, the TProcess thread will wait until the process has finished
+  and will generate an OnFinshed event. If it is set to False, the TProces thread
+  will simply create the process and terminate ( the thread ) allowing the process
+  to run independent of your application. If False, the OnFinished event will
+  NOT be triggered.
+}
+        SpiceProcess.Wait := False;
+{ Execute actually creates the process. TProcess creates a thread which in turn
+  creates the process. This is necessary, because if you set the Wait property
+  to True, the thread will wait until the process is complete and thus will not
+  hang up your application. See the Wait property below. }
+        INFO('$SPICE Dir:' + SPICE_Dir);
+        INFO('$SPICE Command:' + SPICE_CommandLine);
         SpiceProcess.Execute;
         // This is not reached until ppc386 stops running.
-        SpiceProcess.Free;
+        // SpiceProcess.Free;
       end
       else begin
         INFO('$RAW BUT NO NUTMEG :' + NUTMEGSTR);
@@ -661,7 +806,9 @@ end;
  ***************************************************************************}
 
 procedure Run_Mcad;
-
+var
+ MCAD_CommandLine:string; // Required by TProcess
+ MCAD_Dir:string;         // Required by TProcess
 begin
     { MCADEXESTR is not checked to be a file - it is a command in a path so Fi}
       MCADSCRIPTSTR:=Copy(OUTSTR,1,POS('.',OUTSTR)-1)+ext_mcad_str;
@@ -670,19 +817,32 @@ begin
         // Now we will create the TProcess object, and assign it to the var AProcess.
         McadProcess := TProcess.Create(nil);
         // Tell the new AProcess what the command to execute is.
-        // Tell the new AProcess what the command to execute is.
-        McadProcess.CommandLine := MCADEXESTR + ' ' + MCADSCRIPTSTR;
-        // We will define an option for when the program is run. This option will make sure that our program
-         // does not continue until the program we will launch
-         // has stopped running.
-         // AProcess.Options := AProcess.Options + [poWaitOnExit];
-         // Now that AProcess knows what the commandline is we will run it.
+        // But this must be set differently for TProcess defined here for Delphi 3
+        MCAD_CommandLine := MCADEXESTR + ' ' + MCADSCRIPTSTR;
+        // should be exexcuted with full path to SPICE in current data folder
+        MCAD_Dir := ExtractFileDir(MCADSCRIPTSTR);
+        // SPICE_Dir := ExtractFileDir(SPICE_CommandLine);
+        McadProcess.Command := MCAD_CommandLine;
+        McadProcess.Directory := MCAD_Dir;
+{ Wait : Boolean
+  If set to true, the TProcess thread will wait until the process has finished
+  and will generate an OnFinshed event. If it is set to False, the TProces thread
+  will simply create the process and terminate ( the thread ) allowing the process
+  to run independent of your application. If False, the OnFinished event will
+  NOT be triggered.
+}
+        McadProcess.Wait := False;
+{ Execute actually creates the process. TProcess creates a thread which in turn
+  creates the process. This is necessary, because if you set the Wait property
+  to True, the thread will wait until the process is complete and thus will not
+  hang up your application. See the Wait property below. }
+        INFO('$MCAD Dir:' + MCAD_Dir);
+        INFO('$MCAD Command:' + MCAD_CommandLine);
          McadProcess.Execute;
          // This is not reached until ppc386 stops running.
-         McadProcess.Free;
+        // SpiceProcess.Free;
     end
-    else
-    begin
+      else begin
      INFO('$MCAD BUT NO SCRIPT :' + MCADSCRIPTSTR);
     end
 
