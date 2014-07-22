@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="9"/>
+    <PathDelim Value="\"/>
+    <General>
+      <MainUnit Value="0"/>
+      <Title Value="Amp8_D"/>
+      <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
+      <ActiveWindowIndexAtStart Value="0"/>
+    </General>
+    <VersionInfo>
+      <StringTable ProductVersion=""/>
+    </VersionInfo>
+    <BuildModes Count="1">
+      <Item1 Name="default" Default="True"/>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="24">
+      <Unit0>
+        <Filename Value="Amp8_D.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Amp8_D"/>
+        <EditorIndex Value="0"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="11"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="Amp8_Main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="Amp8_Main"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="668"/>
+        <CursorPos X="20" Y="683"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="Model8.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Model8"/>
+        <EditorIndex Value="14"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="11" Y="5"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="OUTPUT8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="OUTPUT8"/>
+        <EditorIndex Value="13"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="2" Y="4"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="Probes8.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Probes8"/>
+        <EditorIndex Value="12"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="RAW8.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RAW8"/>
+        <EditorIndex Value="11"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="11" Y="4"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="TASK8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TASK8"/>
+        <EditorIndex Value="7"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="2" Y="6"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="TOOLBOX8.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TOOLBOX8"/>
+        <EditorIndex Value="6"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="13"/>
+        <CursorPos X="11" Y="27"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="TYPE8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TYPE8"/>
+        <EditorIndex Value="3"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="177"/>
+        <CursorPos X="13" Y="191"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="VAR8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="VAR8"/>
+        <EditorIndex Value="10"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="19"/>
+        <CursorPos X="16" Y="33"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="VAREXT8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="VAREXT8"/>
+        <EditorIndex Value="9"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="YMAT8.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="YMAT8"/>
+        <EditorIndex Value="8"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="11" Y="13"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="AMP8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="AMP8"/>
+        <EditorIndex Value="5"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="11" Y="16"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="COMM8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="COMM8"/>
+        <EditorIndex Value="23"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="11" Y="4"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="COMP8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="COMP8"/>
+        <EditorIndex Value="22"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="2" Y="6"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="DATAIO8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="DATAIO8"/>
+        <EditorIndex Value="21"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="8"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="ELEMENT8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ELEMENT8"/>
+        <EditorIndex Value="20"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="785"/>
+        <CursorPos X="2" Y="7"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="EXTEND8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="EXTEND8"/>
+        <EditorIndex Value="19"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="10" Y="4"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="History.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="History"/>
+        <EditorIndex Value="4"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="30" Y="9"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="LIB8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="LIB8"/>
+        <EditorIndex Value="18"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="2" Y="6"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="LINE8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="LINE8"/>
+        <EditorIndex Value="17"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="MATRIX8.PAS"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MATRIX8"/>
+        <EditorIndex Value="16"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="MCAD8.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MCAD8"/>
+        <EditorIndex Value="15"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="2" Y="4"/>
+        <SyntaxHighlighter Value="Text"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="Amp8form.pas"/>
+        <UnitName Value="Amp8form"/>
+        <EditorIndex Value="2"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="28"/>
+        <CursorPos X="50" Y="3"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+      </Unit23>
+    </Units>
+    <JumpHistory Count="25" HistoryIndex="24">
+      <Position1>
+        <Filename Value="Amp8_Main.pas"/>
+        <Caret Line="277" Column="16" TopLine="1"/>
+      </Position1>
+      <Position2>
+        <Filename Value="Amp8_Main.pas"/>
+        <Caret Line="377" Column="17" TopLine="356"/>
+      </Position2>
+      <Position3>
+        <Filename Value="AMP8.PAS"/>
+        <Caret Line="114" Column="14" TopLine="99"/>
+      </Position3>
+      <Position4>
+        <Filename Value="VAR8.PAS"/>
+        <Caret Line="33" Column="16" TopLine="19"/>
+      </Position4>
+      <Position5>
+        <Filename Value="TYPE8.PAS"/>
+        <Caret Line="397" Column="19" TopLine="376"/>
+      </Position5>
+      <Position6>
+        <Filename Value="AMP8.PAS"/>
+        <Caret Line="117" Column="17" TopLine="105"/>
+      </Position6>
+      <Position7>
+        <Filename Value="AMP8.PAS"/>
+        <Caret Line="120" Column="21" TopLine="105"/>
+      </Position7>
+      <Position8>
+        <Filename Value="DATAIO8.PAS"/>
+        <Caret Line="60" Column="14" TopLine="43"/>
+      </Position8>
+      <Position9>
+        <Filename Value="DATAIO8.PAS"/>
+        <Caret Line="67" Column="7" TopLine="25"/>
+      </Position9>
+      <Position10>
+        <Filename Value="Amp8_Main.pas"/>
+        <Caret Line="377" Column="17" TopLine="191"/>
+      </Position10>
+      <Position11>
+        <Filename Value="Amp8_Main.pas"/>
+        <Caret Line="198" Column="14" TopLine="1"/>
+      </Position11>
+      <Position12>
+        <Filename Value="DATAIO8.PAS"/>
+        <Caret Line="67" Column="7" TopLine="1"/>
+      </Position12>
+      <Position13>
+        <Filename Value="LIB8.PAS"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position13>
+      <Position14>
+        <Filename Value="ELEMENT8.PAS"/>
+        <Caret Line="26" Column="14" TopLine="6"/>
+      </Position14>
+      <Position15>
+        <Filename Value="TASK8.PAS"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position15>
+      <Position16>
+        <Filename Value="MCAD8.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position16>
+      <Position17>
+        <Filename Value="OUTPUT8.PAS"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position17>
+      <Position18>
+        <Filename Value="EXTEND8.PAS"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position18>
+      <Position19>
+        <Filename Value="COMM8.PAS"/>
+        <Caret Line="15" Column="14" TopLine="1"/>
+      </Position19>
+      <Position20>
+        <Filename Value="COMM8.PAS"/>
+        <Caret Line="4" Column="2" TopLine="1"/>
+      </Position20>
+      <Position21>
+        <Filename Value="TOOLBOX8.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position21>
+      <Position22>
+        <Filename Value="TOOLBOX8.pas"/>
+        <Caret Line="129" Column="29" TopLine="10"/>
+      </Position22>
+      <Position23>
+        <Filename Value="YMAT8.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position23>
+      <Position24>
+        <Filename Value="Model8.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position24>
+      <Position25>
+        <Filename Value="AMP8.PAS"/>
+        <Caret Line="120" Column="21" TopLine="1"/>
+      </Position25>
+    </JumpHistory>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+    </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <UseAnsiStrings Value="False"/>
+      </SyntaxOptions>
+    </Parsing>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+  <EditorMacros Count="0"/>
+</CONFIG>

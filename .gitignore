@@ -1,0 +1,28 @@
+#OS junk files
+[Tt]humbs.db
+*.DS_Store
+*.htm
+*.html
+
+#Delphi
+*.~[Pp][Aa][Ss]
+*.dcu
+*.ppu
+
+# Executables
+*.exe
+*.out
+*.app
+*.o
+*.lfm
+*.lrs
+*.or
+*.manifest
+*.compiled
+*.res
+*.rc
+
+_tmp
+test
+
+
