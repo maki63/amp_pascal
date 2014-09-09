@@ -104,6 +104,16 @@ PARLST=RECORD
         TRUE:  ( PVC_HEAD_PT, PVC_TAIL_PT, PVC_CURR_PT:listcpt );
        END;
 
+letpt=^LETLST;
+LETLST=RECORD
+        letname:symb;      { name of model }
+        vre:DOUBLE;
+        vim:DOUBLE;
+        line_pt:listapt;
+        complex_flag:boolean;
+        letnext:letpt;
+       END;
+
 dptr=^D_TYPE;
 D_TYPE=RECORD
         CF_PT,drfpt:drpt;
@@ -395,6 +405,7 @@ TASK=RECORD
       TUN_PT:tunpt;
       TRIM_PT:trimpt;
       PAR_PT:parpt;
+      LET_PT:letpt;
       numberMajor:INTEGER;      // assigned in EXTRACT_TASKS 
       numberMiddle:INTEGER;     // changed by SET_PAR_COMP and 
       numberMinor:INTEGER;      // assigned in CREATE_PROBES_TF_TASKS

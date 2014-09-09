@@ -4,10 +4,6 @@ USES
  SysUtils,
  TYPE8,VAREXT8,VAR8,TASK8,COMP8,DATAIO8;
 
-PROCEDURE WRITE_MCAD(job:taskpt);
-
-PROCEDURE MCAD_TF(job:taskpt);
-PROCEDURE MCAD_TF_SENS(job:taskpt);
 
 PROCEDURE MCAD_RCONV(job:taskpt);
 PROCEDURE MCAD_RCONV_SENS(job:taskpt);
@@ -18,6 +14,13 @@ PROCEDURE MCAD_SCONV(job:taskpt);
 PROCEDURE MCAD_SCONV_SENS(job:taskpt);
 PROCEDURE MCAD_SCONV_DISTO_VAL(j:taskpt);
 
+
+PROCEDURE MCAD_TF(job:taskpt);
+PROCEDURE MCAD_TF_SENS(job:taskpt);
+
+PROCEDURE MCAD_D(job:taskpt);
+
+PROCEDURE MCAD_VAL(job:taskpt);
 
 implementation
 USES Amp8_main;
@@ -75,6 +78,57 @@ USES Amp8_main;
 
 {***************************************************************************}
 
+PROCEDURE MVAL_OPEN;
+ VAR
+ err:INTEGER;
+ BEGIN
+  {$I-}
+  ASSIGN(MVALF,MVSTR);
+  REWRITE(MVALF);
+  if ( not mvaldirfile ) then begin
+    ASSIGN(M0VALF,M0VSTR);
+    REWRITE(M0VALF);
+    mvaldirfile:=TRUE;
+  end
+  else begin
+    ASSIGN(M0VALF,M0VSTR);
+    APPEND(M0VALF);
+  end;
+  {$I+}
+  err:=IOResult;
+  IF err<>0 THEN
+  BEGIN
+   ASSIGN(MVALF,'NUL');
+   REWRITE(MVALF);
+   ERROR(4,err)
+  END
+ END;
+
+
+{***************************************************************************}
+
+ PROCEDURE MVAL_CLOSE;
+ VAR
+  err:INTEGER;
+ BEGIN
+  INFO('CLOSING:'+MVSTR);
+ {$I-}
+  CLOSE(MVALF);
+  CLOSE(M0VALF);
+ {$I+}
+  err:=IOresult;
+  IF err<>0 THEN
+  BEGIN
+   ERROR(6,err);
+  END;
+  ASSIGN(MVALF,'NUL');
+  REWRITE(MVALF);
+  MVSTR:='NUL'
+ END;
+
+
+{***************************************************************************}
+
  PROCEDURE MCAD_CPX(fpt:listbpt;spt:drpt; VAR r_cnt:integer);
  BEGIN
 
@@ -127,282 +181,6 @@ USES Amp8_main;
 
  END;
 
-{***************************************************************************}
-{***************************************************************************}
-{***************************************************************************}
-
- PROCEDURE WRITE_MCAD(job:taskpt);
- VAR
-  nstr:string;
-  fpt:listbpt;
-  d_ptr:dptr;
-  dr_ptr:drpt;
-  p:integer;
-  row_0,row_1:integer;
- BEGIN
-
-   STR(mcadfilenum,nstr);
-   mcadfilenum:=mcadfilenum+1;
-   nstr:=CONCAT('m',nstr);
-   p:=POS('.',OUTSTR);
-   if p<>0 then begin
-    MSTR:=Copy(OUTSTR,1,p)+nstr;
-    M0STR:=Copy(OUTSTR,1,p)+'m0';
-   end
-   else begin
-    MSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
-    M0STR:=Copy(OUTSTR,1,p)+'.m0';
-   end;
-
-   INFO('OPENING OUTPUT:'+MSTR);
-   MCAD_OPEN;
-   WRITELN(M0CADF, 'FILE: '+MSTR);
-
-
-
-  d_ptr:=job^.COFF_PT;
-  WHILE d_ptr<>NIL DO
-  BEGIN
-   d_ptr^.drfpt:=d_ptr^.CF_PT;
-   d_ptr:=d_ptr^.dnext
-  END;
-
-
-   row_0:=1;
-   row_1:=1;
-   d_ptr:=job^.COFF_PT;
-   WHILE d_ptr<>NIL DO
-   BEGIN
-    fpt:=job^.FREQ_PT;
-    dr_ptr:=d_ptr^.CF_PT;
-    WRITELN(M0CADF, 'DATANAME: '+d_ptr^.dname);
-    while ( dr_ptr<>NIL ) do begin
-      WRITELN(MCADF,fpt^.value,'  ',dr_ptr^.red,'  ',dr_ptr^.imd);
-      dr_ptr:=dr_ptr^.drptn;
-      fpt:=fpt^.vpt;
-      row_1:=row_1+1;
-    end;
-    WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(D),IM(D)]' );
-    row_0:=row_1;
-    d_ptr:=d_ptr^.dnext
-   END;
-
-  WRITELN(M0CADF, 'EOF' );
-  MCAD_CLOSE;
-
-  d_ptr:=job^.COFF_PT;
-  WHILE d_ptr<>NIL DO
-  BEGIN
-   d_ptr^.drfpt:=d_ptr^.CF_PT;
-   d_ptr:=d_ptr^.dnext
-  END
- END;
-
-
-{***************************************************************************
- Write to *.m0 and *.mx
- to *.m0 directly
- to *.mx using MCAD_CPX(job^.FREQ_PT,TFri_PT,row_1)
-
- mcadfilenum - global mcad file counter
- OUTSTR - output name string
-
- @version - 1.0
- @param job:taskpt - pointer to the current task
- ***************************************************************************}
-
- PROCEDURE MCAD_TF(job:taskpt);
- VAR
-  nstr:string;
-  row_0,row_1:integer;
-  p:integer;
- BEGIN
-
-   STR(mcadfilenum,nstr);
-   mcadfilenum:=mcadfilenum+1;
-   nstr:=CONCAT('m',nstr);
-   p:=POS('.',OUTSTR);
-   if p<>0 then begin
-    MSTR:=Copy(OUTSTR,1,p)+nstr;
-    M0STR:=Copy(OUTSTR,1,p)+'m0';
-   end
-   else begin
-    MSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
-    M0STR:=Copy(OUTSTR,1,p)+'.m0';
-   end;
-
-   INFO('OPENING OUTPUT:'+MSTR);
-   MCAD_OPEN;
-   WRITELN(M0CADF, 'FILE: '+MSTR);
-   WRITELN(M0CADF, 'DATANAME: '+TF_name);
-   if (job^.PAR_PT <> nil) then begin
-    WRITELN(M0CADF, 'PARAMETERS:');
-    LIST_MCAD_PAR_COMP(job);
-   end;
-   row_0:=1;
-   row_1:=1;
-   MCAD_CPX(job^.FREQ_PT,TFri_PT,row_1);
-   WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(TF),IM(TF)]' );
-   WRITELN(M0CADF, 'EOF' );
-   MCAD_CLOSE;
-
-
- END;
-
-
-{***************************************************************************}
-{***************************************************************************}
-{***************************************************************************}
-
-PROCEDURE MCAD_TF_SENS(job:taskpt);
-VAR
-
- f_ptr :listbpt;
- d_ptr:dptr;
- y_ptr:yptr;
- z_ptr:zptr;
- g_ptr:gptr;
- r_ptr:rptr;
- c_ptr:cptr;
- l_ptr:lptr;
- p:INTEGER;
- nstr:string;
- row_0,row_1:integer;
-
- Ysens_TAIL_PT:listcpt;
- YisLOAD:BOOLEAN;
-
-BEGIN
- INFO('WRITING TRANSFER FUNCTION SENSITIVITIES TO MCAD FILE');
- STR(mcadfilenum,nstr);
- mcadfilenum:=mcadfilenum+1;
- nstr:=CONCAT('m',nstr);
- p:=POS('.',OUTSTR);
- if p<>0 then begin
-  MSTR:=Copy(OUTSTR,1,p)+nstr;
-  M0STR:=Copy(OUTSTR,1,p)+'m0';
- end
- else begin
-  MSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
-  M0STR:=Copy(OUTSTR,1,p)+'.m0'
- end;
-
- INFO('OPENING OUTPUT:'+MSTR);
- MCAD_OPEN;
-
- WRITELN(M0CADF, 'FILE: '+MSTR);
- WRITELN(M0CADF, 'DATANAME: '+ 'SENS('+TF_name+')');
- if (job^.PAR_PT <> nil) then begin
-  WRITELN(M0CADF, 'PARAMETERS:');
-  LIST_MCAD_PAR_COMP(job);
- end;
-
-{* first write freq points - skip this                                    *}
-{ MCAD_LIST_REAL(F_PT);                                                    }
-{* freq pointers are reseted in suporting procedures                      *}
-{ Create list of admittances to avoid overloading of the heap - one list for YGRLC}
- f_ptr:=job^.FREQ_PT;
- Ysens_HEAD_PT:=NIL;
- while ( f_ptr<>NIL ) do begin
-     ADD2CPLX_LIST(Ysens_HEAD_PT, Ysens_TAIL_PT, 0.0, 0.0);
-     f_ptr:=f_ptr^.vpt;
- end;
-{* The coffactor list starts from DL and DN                               *}
-
- d_ptr:=job^.COFF_PT^.dnext^.dnext;
- row_0:=1;
- row_1:=1;
-
-{The coffactor order is: Y,G,R,C,L}
-{* for each component                                                    *}
- y_ptr:=Y_head;
- WHILE (y_ptr<>NIL) DO BEGIN
-   WITH(y_ptr^) DO BEGIN
-      if ( yvar<>GEN ) then begin
-        CALC_Ysens_Y(y_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
-        IF (y_ptr=Y0_PT) THEN YisLOAD:=TRUE ELSE YisLOAD:=FALSE;
-        COMPUTE_SENS_VAL(job^.FREQ_PT,yname,YisLOAD,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
-        MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
-        WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+yname );
-        row_0:=row_1;
-        d_ptr:=d_ptr^.dnext^.dnext
-      end;
-    END;
-    y_ptr:=y_ptr^.ynext
- END;
-
- g_ptr:=G_head;
- WHILE (g_ptr<>NIL) DO BEGIN
-   WITH(g_ptr^) DO BEGIN
-    if ( gvar<>GEN ) then begin
-      CALC_Ysens_G(g_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
-      COMPUTE_SENS_VAL(job^.FREQ_PT,gname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
-      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
-      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+gname );
-      row_0:=row_1;
-      d_ptr:=d_ptr^.dnext^.dnext
-    end;
-  END;
-  g_ptr:=g_ptr^.gnext
- END;
-
- z_ptr:=Z_head;
- WHILE (z_ptr<>NIL) DO BEGIN
-   WITH(z_ptr^) DO BEGIN
-      CALC_Ysens_Z(z_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
-      COMPUTE_SENS_VAL(job^.FREQ_PT,zname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
-      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
-      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+zname );
-      row_0:=row_1;
-      d_ptr:=d_ptr^.dnext^.dnext
-  END;
-  z_ptr:=z_ptr^.znext
- END;
-
- r_ptr:=R_head;
- WHILE r_ptr<>NIL DO BEGIN
-  WITH r_ptr^ DO BEGIN
-   if ( rvar<>GEN ) then begin
-      CALC_Ysens_R(r_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
-      COMPUTE_SENS_VAL(job^.FREQ_PT,rname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
-      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
-      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+rname );
-      row_0:=row_1;
-      d_ptr:=d_ptr^.dnext^.dnext
-    end;
-  END;
-  r_ptr:=r_ptr^.rnext
- END;
-
- c_ptr:=C_head;
- WHILE c_ptr<>NIL DO BEGIN
-  WITH c_ptr^ DO BEGIN
-      CALC_Ysens_C(c_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
-      COMPUTE_SENS_VAL(job^.FREQ_PT,cname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
-      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
-      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+cname );
-      row_0:=row_1;
-      d_ptr:=d_ptr^.dnext^.dnext
-    END;
-    c_ptr:=c_ptr^.cnext
- END;
-
- l_ptr:=L_head;
- WHILE l_ptr<>NIL DO BEGIN
-  WITH l_ptr^ DO BEGIN
-      CALC_Ysens_L(l_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
-      COMPUTE_SENS_VAL(job^.FREQ_PT,lname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
-      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
-      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+lname );
-      row_0:=row_1;
-      d_ptr:=d_ptr^.dnext^.dnext
-   END;
-   l_ptr:=l_ptr^.lnext
- END;
-
- WRITELN(M0CADF, 'EOF' );
- MCAD_CLOSE;
-END;
 
 
 {***************************************************************************}
@@ -1145,6 +923,420 @@ END;
 {***************************************************************************}
 {***************************************************************************}
 
+
+{***************************************************************************
+ Write to *.m0 and *.mx
+ to *.m0 directly
+ to *.mx using MCAD_CPX(job^.FREQ_PT,TFri_PT,row_1)
+
+ mcadfilenum - global mcad file counter
+ OUTSTR - output name string
+
+ @version - 1.0
+ @param job:taskpt - pointer to the current task
+ ***************************************************************************}
+
+ PROCEDURE MCAD_TF(job:taskpt);
+ VAR
+  nstr:string;
+  row_0,row_1:integer;
+  p:integer;
+ BEGIN
+
+   STR(mcadfilenum,nstr);
+   mcadfilenum:=mcadfilenum+1;
+   nstr:=CONCAT('m',nstr);
+   p:=POS('.',OUTSTR);
+   if p<>0 then begin
+    MSTR:=Copy(OUTSTR,1,p)+nstr;
+    M0STR:=Copy(OUTSTR,1,p)+'m0';
+   end
+   else begin
+    MSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
+    M0STR:=Copy(OUTSTR,1,p)+'.m0';
+   end;
+
+   INFO('OPENING OUTPUT:'+MSTR);
+   MCAD_OPEN;      
+   WRITELN(M0CADF, 'TASK:', job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+   WRITELN(M0CADF, 'FILE: '+MSTR);
+   WRITELN(M0CADF, 'DATANAME: '+TF_name);
+   if (job^.PAR_PT <> nil) then begin
+    WRITELN(M0CADF, 'PARAMETERS:');
+    LIST_MCAD_PAR_COMP(job, M0CADF);
+   end;
+   row_0:=1;
+   row_1:=1;
+   MCAD_CPX(job^.FREQ_PT,TFri_PT,row_1);
+   WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(TF),IM(TF)]' );
+   WRITELN(M0CADF, 'EOF' );
+   MCAD_CLOSE;
+
+
+ END;
+
+
+{***************************************************************************}
+{***************************************************************************}
+{***************************************************************************}
+
+PROCEDURE MCAD_TF_SENS(job:taskpt);
+VAR
+
+ f_ptr :listbpt;
+ d_ptr:dptr;
+ y_ptr:yptr;
+ z_ptr:zptr;
+ g_ptr:gptr;
+ r_ptr:rptr;
+ c_ptr:cptr;
+ l_ptr:lptr;
+ p:INTEGER;
+ nstr:string;
+ row_0,row_1:integer;
+
+ Ysens_TAIL_PT:listcpt;
+ YisLOAD:BOOLEAN;
+
+BEGIN
+ INFO('WRITING TRANSFER FUNCTION SENSITIVITIES TO MCAD FILE');
+ STR(mcadfilenum,nstr);
+ mcadfilenum:=mcadfilenum+1;
+ nstr:=CONCAT('m',nstr);
+ p:=POS('.',OUTSTR);
+ if p<>0 then begin
+  MSTR:=Copy(OUTSTR,1,p)+nstr;
+  M0STR:=Copy(OUTSTR,1,p)+'m0';
+ end
+ else begin
+  MSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
+  M0STR:=Copy(OUTSTR,1,p)+'.m0'
+ end;
+
+ INFO('OPENING OUTPUT:'+MSTR);
+ MCAD_OPEN;
+ WRITELN(M0CADF, 'TASK:', job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+ WRITELN(M0CADF, 'FILE: '+MSTR);
+ WRITELN(M0CADF, 'DATANAME: '+ 'SENS('+TF_name+')');
+ if (job^.PAR_PT <> nil) then begin
+  WRITELN(M0CADF, 'PARAMETERS:');
+  LIST_MCAD_PAR_COMP(job, M0CADF);
+ end;
+
+{* first write freq points - skip this                                    *}
+{ MCAD_LIST_REAL(F_PT);                                                    }
+{* freq pointers are reseted in suporting procedures                      *}
+{ Create list of admittances to avoid overloading of the heap - one list for YGRLC}
+ f_ptr:=job^.FREQ_PT;
+ Ysens_HEAD_PT:=NIL;
+ while ( f_ptr<>NIL ) do begin
+     ADD2CPLX_LIST(Ysens_HEAD_PT, Ysens_TAIL_PT, 0.0, 0.0);
+     f_ptr:=f_ptr^.vpt;
+ end;
+{* The coffactor list starts from DL and DN                               *}
+
+ d_ptr:=job^.COFF_PT^.dnext^.dnext;
+ row_0:=1;
+ row_1:=1;
+
+{The coffactor order is: Y,G,R,C,L}
+{* for each component                                                    *}
+ y_ptr:=Y_head;
+ WHILE (y_ptr<>NIL) DO BEGIN
+   WITH(y_ptr^) DO BEGIN
+      if ( yvar<>GEN ) then begin
+        CALC_Ysens_Y(y_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
+        IF (y_ptr=Y0_PT) THEN YisLOAD:=TRUE ELSE YisLOAD:=FALSE;
+        COMPUTE_SENS_VAL(job^.FREQ_PT,yname,YisLOAD,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
+        MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
+        WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+yname );
+        row_0:=row_1;
+        d_ptr:=d_ptr^.dnext^.dnext
+      end;
+    END;
+    y_ptr:=y_ptr^.ynext
+ END;
+
+ g_ptr:=G_head;
+ WHILE (g_ptr<>NIL) DO BEGIN
+   WITH(g_ptr^) DO BEGIN
+    if ( gvar<>GEN ) then begin
+      CALC_Ysens_G(g_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
+      COMPUTE_SENS_VAL(job^.FREQ_PT,gname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
+      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
+      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+gname );
+      row_0:=row_1;
+      d_ptr:=d_ptr^.dnext^.dnext
+    end;
+  END;
+  g_ptr:=g_ptr^.gnext
+ END;
+
+ z_ptr:=Z_head;
+ WHILE (z_ptr<>NIL) DO BEGIN
+   WITH(z_ptr^) DO BEGIN
+      CALC_Ysens_Z(z_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
+      COMPUTE_SENS_VAL(job^.FREQ_PT,zname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
+      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
+      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+zname );
+      row_0:=row_1;
+      d_ptr:=d_ptr^.dnext^.dnext
+  END;
+  z_ptr:=z_ptr^.znext
+ END;
+
+ r_ptr:=R_head;
+ WHILE r_ptr<>NIL DO BEGIN
+  WITH r_ptr^ DO BEGIN
+   if ( rvar<>GEN ) then begin
+      CALC_Ysens_R(r_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
+      COMPUTE_SENS_VAL(job^.FREQ_PT,rname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
+      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
+      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+rname );
+      row_0:=row_1;
+      d_ptr:=d_ptr^.dnext^.dnext
+    end;
+  END;
+  r_ptr:=r_ptr^.rnext
+ END;
+
+ c_ptr:=C_head;
+ WHILE c_ptr<>NIL DO BEGIN
+  WITH c_ptr^ DO BEGIN
+      CALC_Ysens_C(c_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
+      COMPUTE_SENS_VAL(job^.FREQ_PT,cname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
+      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
+      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+cname );
+      row_0:=row_1;
+      d_ptr:=d_ptr^.dnext^.dnext
+    END;
+    c_ptr:=c_ptr^.cnext
+ END;
+
+ l_ptr:=L_head;
+ WHILE l_ptr<>NIL DO BEGIN
+  WITH l_ptr^ DO BEGIN
+      CALC_Ysens_L(l_ptr, job^.FREQ_PT, Ysens_HEAD_PT);
+      COMPUTE_SENS_VAL(job^.FREQ_PT,lname,FALSE,Ysens_HEAD_PT,job^.COFF_PT,d_ptr);
+      MCAD_CPX(job^.FREQ_PT,SrSi_PT,row_1);
+      WRITELN(M0CADF, 'DATA: '+'[',row_0,'..',row_1-1,',1..3',']', '[F,RE(S(TF)),IM(S(TF))]'+'_'+lname );
+      row_0:=row_1;
+      d_ptr:=d_ptr^.dnext^.dnext
+   END;
+   l_ptr:=l_ptr^.lnext
+ END;
+
+ WRITELN(M0CADF, 'EOF' );
+ MCAD_CLOSE;
+END;
+
+{***************************************************************************
+ Write to *.m0 and *.mx
+ to *.m0 directly
+ to *.mx using MCAD_CPX(job^.FREQ_PT,dr_ptr,row_1)
+
+ mcadfilenum - global mcad file counter
+ OUTSTR - output name string
+
+ @version - 1.0
+ @param job:taskpt - pointer to the current task
+ ***************************************************************************}
+
+ PROCEDURE MCAD_D(job:taskpt);
+ VAR
+  nstr:string;
+  d_ptr:dptr;
+  dr_ptr:drpt;
+  p:integer;
+  row_1:integer;
+
+ BEGIN
+
+   p:=POS('.',OUTSTR);
+   if p<>0 then begin
+    M0STR:=Copy(OUTSTR,1,p)+'m0';
+   end
+   else begin
+    M0STR:=Copy(OUTSTR,1,p)+'.m0';
+   end;
+
+   d_ptr:=job^.COFF_PT;
+   WHILE d_ptr<>NIL DO
+   BEGIN
+    d_ptr^.drfpt:=d_ptr^.CF_PT;
+    d_ptr:=d_ptr^.dnext
+   END;
+
+   d_ptr:=job^.COFF_PT;
+   WHILE d_ptr<>NIL DO
+   BEGIN    
+    
+    STR(mcadfilenum,nstr);
+    mcadfilenum:=mcadfilenum+1;
+    nstr:=CONCAT('m',nstr);
+    p:=POS('.',OUTSTR);
+    if p<>0 then begin
+     MSTR:=Copy(OUTSTR,1,p)+nstr;
+    end
+    else begin
+     MSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
+    end;
+        
+    INFO('OPENING OUTPUT:'+MSTR);
+    MCAD_OPEN;
+    dr_ptr:=d_ptr^.CF_PT;
+    row_1:=1; 
+    MCAD_CPX(job^.FREQ_PT,dr_ptr,row_1);    
+    WRITELN(M0CADF, 'TASK:', job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+    WRITELN(M0CADF, 'FILE: '+MSTR);
+    WRITELN(M0CADF, 'DATANAME: '+d_ptr^.dname);
+    if (job^.PAR_PT <> nil) then begin
+     WRITELN(M0CADF, 'PARAMETERS:');
+     LIST_MCAD_PAR_COMP(job, M0CADF);
+    end;
+    WRITELN(M0CADF, 'DATA: '+'[1..',row_1-1,',1..3',']', '[F,RE(D),IM(D)]' );
+    WRITELN(M0CADF, 'EOF' );
+    MCAD_CLOSE;
+    d_ptr:=d_ptr^.dnext    
+   END;
+
+  d_ptr:=job^.COFF_PT;
+  WHILE d_ptr<>NIL DO
+  BEGIN
+   d_ptr^.drfpt:=d_ptr^.CF_PT;
+   d_ptr:=d_ptr^.dnext
+  END
+ END;
+
+{***************************************************************************
+ Write *.mvx all components that may be modified by $LET
+ @version - 1.0
+ @param job:taskpt - pointer to the current task
+ ***************************************************************************}
+
+PROCEDURE MCAD_VAL_LIST;
+VAR
+
+ y_ptr:yptr;
+ z_ptr:zptr;
+ g_ptr:gptr;
+ r_ptr:rptr;
+ c_ptr:cptr;
+ l_ptr:lptr;
+
+BEGIN
+
+{The coffactor order is: Y,G,R,C,L}
+{* for each component                                                    *}
+ y_ptr:=Y_head;
+ while (y_ptr<>NIL) do begin
+   with(y_ptr^) do begin
+      if ( (yvar = CONSTANT) OR (yvar = PARAM)  ) then begin
+        if yvim = 0 then WRITELN(MVALF, yname, ' = ' , yvre ,';' )
+        else WRITELN(MVALF, yname, ' = ' , yvre ,'+%i*', yvim, ';' )
+      end;
+    end;
+    y_ptr:=y_ptr^.ynext
+ end;
+
+ g_ptr:=G_head;
+ while (g_ptr<>NIL) do begin
+   with(g_ptr^) do begin
+      if ((( gvar = CONSTANT ) OR (gvar = PARAM)) AND ( gtype = GENUINE)) then begin
+        if gvim = 0 then WRITELN(MVALF, gname, ' = ' , gvre ,';' )
+        else WRITELN(MVALF, gname, ' = ' , gvre ,'+%i*', gvim, ';' )
+      end;
+    end;
+    g_ptr:=g_ptr^.gnext
+ end;
+
+ z_ptr:=Z_head;
+ while (z_ptr<>NIL) do begin
+   with(z_ptr^) do begin
+      if (( zvar = CONSTANT ) OR (zvar = PARAM) )then begin
+        if zvim = 0 then WRITELN(MVALF, zname, ' = ' , zvre ,';' )
+        else WRITELN(MVALF, zname, ' = ' , zvre ,'+%i*', zvim, ';' )
+      end;
+    end;
+    z_ptr:=z_ptr^.znext
+ end;
+
+ r_ptr:=R_head;
+ while (r_ptr<>NIL) do begin
+   with(r_ptr^) do begin
+      if (( rvar = CONSTANT ) OR (rvar = PARAM)) then WRITELN(MVALF, rname, ' = ' , rv ,';' );
+    end;
+    r_ptr:=r_ptr^.rnext
+ end;
+
+ c_ptr:=C_head;
+ while (c_ptr<>NIL) do begin
+   with(c_ptr^) do begin
+      if (( cvar = CONSTANT ) OR (cvar = PARAM)) then WRITELN(MVALF, cname, ' = ' , cv ,';' );
+    end;
+    c_ptr:=c_ptr^.cnext
+ end;
+
+
+ l_ptr:=L_head;
+ while (l_ptr<>NIL) do begin
+   with(l_ptr^) do begin
+      if (( lvar = CONSTANT ) OR (lvar = PARAM)) then WRITELN(MVALF, lname, ' = ' , lv ,';' );
+    end;
+    l_ptr:=l_ptr^.lnext
+ end;
+
+END;
+
+{***************************************************************************
+ Write to *.mv0 and *.mvx
+ to *.mv0 directly
+ to *.mvx using MCAD_VAL_LIST()
+
+ mcad_values_filenum - global mcad_values file counter
+ mcad_major_number 
+ mcad_middle_number
+ *  
+ @version - 1.0
+ @param job:taskpt - pointer to the current task
+ ***************************************************************************}
+
+ PROCEDURE MCAD_VAL(job:taskpt);
+ VAR
+  nstr:string;
+  p:integer;
+
+ BEGIN
+
+   mcad_numberMajor := job^.numberMajor;
+   mcad_numberMiddle := job^.numberMiddle;
+   
+   STR(mvalfilenum,nstr);
+   mvalfilenum:=mvalfilenum+1;
+   nstr:=CONCAT('mv',nstr);
+   p:=POS('.',OUTSTR);
+   if p<>0 then begin
+    M0VSTR:=Copy(OUTSTR,1,p)+'mv0';
+    MVSTR:=Copy(OUTSTR,1,p)+nstr; 
+   end
+   else begin
+    M0VSTR:=Copy(OUTSTR,1,p)+'.mv0';
+    MVSTR:=Copy(OUTSTR,1,Length(INPSTR))+'.'+nstr;
+   end;
+
+    INFO('OPENING VAL FILE:'+MVSTR);
+    MVAL_OPEN;
+    WRITELN(M0VALF, 'TASK:', job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+    WRITELN(M0VALF, 'FILE: '+MVSTR);
+    if (job^.PAR_PT <> nil) then begin
+     WRITELN(M0VALF, 'PARAMETERS:');
+     LIST_MCAD_PAR_COMP(job, M0VALF);
+    end;
+    WRITELN(M0VALF, 'EOF' );
+    MCAD_VAL_LIST;
+    MVAL_CLOSE;
+
+ END;
 
 
 END.

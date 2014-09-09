@@ -40,6 +40,8 @@ PROCEDURE DEFINE_FREQ(job:taskpt);
 PROCEDURE SET_PAR_COMP(job:taskpt);
 FUNCTION  UPDATE_PAR_COMP(job:taskpt):boolean;
 
+PROCEDURE APPLY_LET_LIST(job:taskpt);
+
 FUNCTION COMPLEX_ELEMENT_COUNTER( clpt:listcpt):integer;
 FUNCTION REAL_ELEMENT_COUNTER( rlpt:listbpt):integer;
 
@@ -462,6 +464,7 @@ END;
           tlptr^.TRIM_PT:=NIL;
           tlptr^.TUN_PT:=NIL;
           tlptr^.PAR_PT:=NIL;
+          tlptr^.LET_PT:=NIL;
           tlptr^.tpt:=NIL;
           newtask:=FALSE;
         end;
@@ -483,7 +486,7 @@ END;
                                  end;
                         'f','F': ADD_COMD(tlptr,comdpt); {* $TF *}
                         end;
-
+               'l','L': ADD_COMD(tlptr,comdpt); {* $LET *}
                'm','M': case line[cpt1+2] of
                         'a','A': ADD_CDEF(tlptr,cdefpt); {* $MAT  *}
                         'o','O': ADD_CDEF(tlptr,cdefpt); {* $MOD  *}
@@ -1666,9 +1669,10 @@ BEGIN
 
      TASK_ref_pt:=TASK_PT; { this must be task with no $TF since it will be copied to child task }
      TASK_PT:=NIL;
-     task_counter:=1;
+     
      while ( TASK_ref_pt<> NIL ) do begin
           tf_line_pt:=PROBES_TF_PT;
+          task_counter:=1;
           while ( tf_line_pt<>NIL ) do begin
               if  TASK_PT=NIL then begin
                 NEW(TASK_PT);
@@ -2372,6 +2376,301 @@ PROCEDURE SET_PAR_COMP(job:taskpt);
 
  END;
 
+{***************************************************************************}
+{ 
+  $LET Rx XX
+  $LET Lx XX
+  $LET Cx XX 
+  $LET Yx XX YY
+  $LET Gx XX YY
+  $LET Zx XX YY 
+}
+{***************************************************************************}
+
+PROCEDURE ADD_LET(j:taskpt; VAR HEAD_PT,TAIL_PT:letpt);
+
+ BEGIN
+
+  if HEAD_PT=NIL then begin {* add new let def *}
+    NEW(HEAD_PT);
+    TAIL_PT:=HEAD_PT;
+  end
+  else begin
+    NEW(TAIL_PT^.letnext);
+    TAIL_PT:=TAIL_PT^.letnext
+  end;
+  TAIL_PT^.letnext:=NIL;
+  xx:=FALSE;
+  cpt1:=FND(' ',' ',cpt1);
+  cpt1:=FND('!','z',cpt1);
+  cpt2:= FND(' ',' ',cpt1);
+  TXT(cpt1,cpt2-1);
+  TAIL_PT^.letname:=nsymb;  
+  { read first number - real  }
+  RRL;
+  if NOT xx then begin
+    TAIL_PT^.vre:=rr;
+    RRL;
+    if xx then begin
+        TAIL_PT^.vim:=0.0;
+        TAIL_PT^.complex_flag:=FALSE;
+    end
+    else begin
+        TAIL_PT^.vim:=rr;
+        TAIL_PT^.complex_flag:=TRUE;
+    end
+  end
+  else begin
+   DATA_ERROR;
+  end;
+  
+END;
+
+{***************************************************************************}
+
+PROCEDURE EXTRACT_LET_DEF(job:taskpt);
+ VAR
+ lptr:listapt;
+ LET_TAIL_PT:letpt;
+ c:char;
+ BEGIN
+    
+  job^.LET_PT:=NIL;           { fetch $LET definitions }
+  LET_TAIL_PT:=job^.LET_PT;
+  lptr:=job^.COMD_PT;
+  while lptr<>NIL do begin
+   line:=lptr^.oneline;
+   xx:=FALSE;
+   cpt1:=FND('!','z',1);
+   cpt2:=cpt1;
+   if line[cpt1]='$' then begin
+        c:=line[cpt1+1];
+        case c of
+        'l','L': begin
+                  ADD_LET(job,job^.LET_PT,LET_TAIL_PT);   { $LET   }
+                  LET_TAIL_PT^.line_pt:=lptr; { a reference to this line - only one line }
+                 end;
+        end;
+   end;
+   lptr:=lptr^.lpt;
+  end;
+    
+ END;
+
+{***************************************************************************}
+{ search for matching LET component                                         }
+{***************************************************************************}
+FUNCTION LET_MATCH_Y (let_pt:letpt): yptr;
+VAR
+  y_ptr:yptr;
+BEGIN  
+  Result:=NIL;
+  y_ptr:=Y_head;
+  while y_ptr<>NIL do
+  begin
+    if ( y_ptr^.yname = let_pt^.letname) AND (y_ptr^.yvar = CONSTANT) then begin
+      if (let_pt^.complex_flag) then begin
+        y_ptr^.yvre := let_pt^.vre;
+        y_ptr^.yvim := let_pt^.vim;
+      end
+      else begin
+        y_ptr^.yvre := let_pt^.vre;
+        y_ptr^.yvim := 0.0;
+      end;
+      Result:=y_ptr;
+      Break;
+    end;
+    y_ptr:=y_ptr^.ynext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION LET_MATCH_G (let_pt:letpt): gptr;
+VAR
+  g_ptr:gptr;
+BEGIN  
+  Result:=NIL;
+  g_ptr:=G_head;
+  while g_ptr<>NIL do
+  begin
+    if ( g_ptr^.gname = let_pt^.letname) AND (g_ptr^.gvar = CONSTANT) then begin
+      if (let_pt^.complex_flag) then begin
+        g_ptr^.gvre := let_pt^.vre;
+        g_ptr^.gvim := let_pt^.vim;
+      end
+      else begin
+        g_ptr^.gvre := let_pt^.vre;
+        g_ptr^.gvim := 0.0;
+      end;
+      Result:=g_ptr;
+      Break;
+    end;
+    g_ptr:=g_ptr^.gnext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION LET_MATCH_Z (let_pt:letpt): zptr;
+VAR
+  z_ptr:zptr;
+BEGIN  
+  Result:=NIL;
+  z_ptr:=Z_head;
+  while z_ptr<>NIL do
+  begin
+    if ( z_ptr^.zname = let_pt^.letname) AND (z_ptr^.zvar = CONSTANT) then begin
+      if (let_pt^.complex_flag) then begin
+        z_ptr^.zvre := let_pt^.vre;
+        z_ptr^.zvim := let_pt^.vim;
+      end
+      else begin
+        z_ptr^.zvre := let_pt^.vre;
+        z_ptr^.zvim := 0.0;
+      end;
+      Result:=z_ptr;
+      Break;
+    end;
+    z_ptr:=z_ptr^.znext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION LET_MATCH_R (let_pt:letpt): rptr;
+VAR
+  r_ptr:rptr;
+BEGIN  
+  Result:=NIL;
+  r_ptr:=R_head;
+  while r_ptr<>NIL do
+  begin
+    if ( r_ptr^.rname = let_pt^.letname) AND (r_ptr^.rvar = CONSTANT) then begin
+        r_ptr^.rv := let_pt^.vre;
+        Result:=r_ptr;
+        Break;
+    end;
+    r_ptr:=r_ptr^.rnext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION LET_MATCH_C (let_pt:letpt): cptr;
+VAR
+  c_ptr:cptr;
+BEGIN  
+  Result:=NIL;
+  c_ptr:=C_head;
+  while c_ptr<>NIL do
+  begin
+    if ( c_ptr^.cname = let_pt^.letname) AND (c_ptr^.cvar = CONSTANT) then begin
+        c_ptr^.cv := let_pt^.vre;
+        Result:=c_ptr;
+        Break;
+    end;
+    c_ptr:=c_ptr^.cnext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION LET_MATCH_L (let_pt:letpt): lptr;
+VAR
+  l_ptr:lptr;
+BEGIN  
+  Result:=NIL;
+  l_ptr:=L_head;
+  while l_ptr<>NIL do
+  begin
+    if ( l_ptr^.lname = let_pt^.letname) AND (l_ptr^.lvar = CONSTANT) then begin
+        l_ptr^.lv := let_pt^.vre;
+        Result:=l_ptr;
+        Break;
+    end;
+    l_ptr:=l_ptr^.lnext;
+  end;
+
+END;
+
+{***************************************************************************}
+PROCEDURE MATCH_LET_LIST(job:taskpt);
+ VAR
+ let_ptr:letpt;
+ 
+ y_ptr:yptr;
+ z_ptr:zptr;
+ g_ptr:gptr;
+ r_ptr:rptr;
+ c_ptr:cptr;
+ l_ptr:lptr;
+
+ c:char;
+ BEGIN
+
+  let_ptr:=job^.LET_PT;
+  while let_ptr<>NIL do
+  begin
+      line := let_ptr^.line_pt^.oneline;
+      c := let_ptr^.letname[1];
+      case c of
+        'y','Y': begin        
+            y_ptr := LET_MATCH_Y(let_ptr);
+            if  y_ptr = NIL then begin
+                MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
+            end;
+        end;
+        'g','G': begin        
+            g_ptr := LET_MATCH_G(let_ptr);
+            if  g_ptr = NIL then begin
+                MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
+            end;
+        end;
+        'z','Z': begin        
+            z_ptr := LET_MATCH_Z(let_ptr);
+            if  z_ptr = NIL then begin
+                MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
+            end;
+        end;
+        'r','R': begin        
+            r_ptr := LET_MATCH_R(let_ptr);
+            if  r_ptr = NIL then begin
+                MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
+            end;
+        end;
+        'c','C': begin        
+            c_ptr := LET_MATCH_C(let_ptr);
+            if  c_ptr = NIL then begin
+                MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
+            end;
+        end;
+        'l','L': begin        
+            l_ptr := LET_MATCH_L(let_ptr);
+            if  l_ptr = NIL then begin
+                MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
+            end;
+        end;
+        
+      end; 
+      let_ptr:=let_ptr^.letnext;
+  end;
+
+ END;
+
+{***************************************************************************}
+{***************************************************************************}
+{***************************************************************************}
+
+ PROCEDURE APPLY_LET_LIST(job:taskpt);
+ BEGIN
+    EXTRACT_LET_DEF(job);
+    MATCH_LET_LIST(job);
+ END;
+
+{***************************************************************************}
+{***************************************************************************}
+{***************************************************************************}
 
 
 END.

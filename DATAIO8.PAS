@@ -46,7 +46,8 @@ PROCEDURE LIST_VARYING_COMP(j:taskpt);
 PROCEDURE TRACE_LIB;
 
 PROCEDURE LIST_PAR_COMP(j:taskpt);
-PROCEDURE LIST_MCAD_PAR_COMP(j:taskpt);
+PROCEDURE LIST_MCAD_PAR_COMP(j:taskpt; var FTEXT:text);
+
 
 PROCEDURE LIST_MAT_COMP;
 PROCEDURE LIST_EXTENDED_COMP;
@@ -818,7 +819,7 @@ END;
 
 {***************************************************************************}
 
-PROCEDURE LIST_MCAD_PAR_COMP(j:taskpt);
+PROCEDURE LIST_MCAD_PAR_COMP(j:taskpt; var FTEXT:text);
 VAR
  par_pt:parpt;
  y_ptr:yptr;
@@ -840,10 +841,10 @@ BEGIN
        if ( y_ptr^.yvar = PARAM) then begin
           par_pt := y_ptr^.yparpt ;
           if ( par_pt^.PAR_complex ) then begin
-            WRITELN(M0CADF,tab_str+y_ptr^.yname,'=',par_pt^.PVC_CURR_PT^.valre,' + i(',par_pt^.PVC_CURR_PT^.valim,')' );
+            WRITELN(FTEXT,tab_str+y_ptr^.yname,'=',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
           end
           else begin
-            WRITELN(M0CADF,tab_str+y_ptr^.yname,'=',par_pt^.PVR_CURR_PT^.value );
+            WRITELN(FTEXT,tab_str+y_ptr^.yname,'=',par_pt^.PVR_CURR_PT^.value );
           end
        end;
        y_ptr:=y_ptr^.ynext;
@@ -855,10 +856,10 @@ BEGIN
        if ( g_ptr^.gvar = PARAM) then begin
           par_pt := g_ptr^.gparpt ;
           if ( par_pt^.PAR_complex ) then begin
-            WRITELN(M0CADF,tab_str+g_ptr^.gname,'=',par_pt^.PVC_CURR_PT^.valre,' + i(',par_pt^.PVC_CURR_PT^.valim,')' );
+            WRITELN(FTEXT,tab_str+g_ptr^.gname,'=',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
           end
           else begin
-            WRITELN(M0CADF,tab_str+g_ptr^.gname,'=',par_pt^.PVR_CURR_PT^.value );
+            WRITELN(FTEXT,tab_str+g_ptr^.gname,'=',par_pt^.PVR_CURR_PT^.value );
           end
        end;
        g_ptr:=g_ptr^.gnext;
@@ -870,10 +871,10 @@ BEGIN
        if ( z_ptr^.zvar = PARAM) then begin
           par_pt := z_ptr^.zparpt ;
           if ( par_pt^.PAR_complex ) then begin
-            WRITELN(M0CADF,tab_str+z_ptr^.zname,'=',par_pt^.PVC_CURR_PT^.valre,' + i(',par_pt^.PVC_CURR_PT^.valim,')' );
+            WRITELN(FTEXT,tab_str+z_ptr^.zname,'=',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
           end
           else begin
-            WRITELN(M0CADF,tab_str+z_ptr^.zname,'=',par_pt^.PVR_CURR_PT^.value );
+            WRITELN(FTEXT,tab_str+z_ptr^.zname,'=',par_pt^.PVR_CURR_PT^.value );
           end
        end;
        z_ptr:=z_ptr^.znext;
@@ -884,7 +885,7 @@ BEGIN
   begin
        if ( r_ptr^.rvar = PARAM) then begin
           par_pt := r_ptr^.rparpt ;
-          WRITELN(M0CADF,tab_str+r_ptr^.rname,'=',par_pt^.PVR_CURR_PT^.value );
+          WRITELN(FTEXT,tab_str+r_ptr^.rname,'=',par_pt^.PVR_CURR_PT^.value );
        end;
        r_ptr:=r_ptr^.rnext;
   end;
@@ -894,7 +895,7 @@ BEGIN
   begin
        if ( c_ptr^.cvar = PARAM) then begin
           par_pt := c_ptr^.cparpt ;
-          WRITELN(M0CADF,tab_str+c_ptr^.cname,'=',par_pt^.PVR_CURR_PT^.value );
+          WRITELN(FTEXT,tab_str+c_ptr^.cname,'=',par_pt^.PVR_CURR_PT^.value );
        end;
        c_ptr:=c_ptr^.cnext;
   end;
@@ -904,12 +905,11 @@ BEGIN
   begin
        if ( l_ptr^.lvar = PARAM) then begin
           par_pt := l_ptr^.lparpt ;
-          WRITELN(M0CADF,tab_str+l_ptr^.lname,'=',par_pt^.PVR_CURR_PT^.value );
+          WRITELN(FTEXT,tab_str+l_ptr^.lname,'=',par_pt^.PVR_CURR_PT^.value );
        end;
        l_ptr:=l_ptr^.lnext;
   end;
 
-  {WRITELN(RESULTS,'******************* END OF PAR COMPONENTS    *************');}
  END;
 END;
 

@@ -73,6 +73,8 @@ var
   trace:boolean=FALSE;
   SpiceProcess: TProcess;
   McadProcess: TProcess;
+  Timer1_Tick:integer=1; 
+  GUI_flag:boolean=True; 
 
   PROCEDURE ERROR(errnum,doserr:INTEGER);
   PROCEDURE INFO(i:STRING);
@@ -110,6 +112,7 @@ var
   PROCEDURE MATRIX_TOOLBOX_CANNOT_INVERT_ERROR;
   PROCEDURE MATRIX_TOOLBOX_CONVERSION_ERROR;
   PROCEDURE RAW_POINTS_ERROR;
+  PROCEDURE MATCH_IN_LET_ERROR;
 
   // TProcess
   procedure Register;
@@ -301,6 +304,7 @@ BEGIN
      40:str:='40:MATRIX_TOOLBOX_CANNOT_INVERT_ERROR';
      41:str:='41:MATRIX_TOOLBOX_CONVERSION_ERROR';
      42:str:='42:RAW_POINTS_ERROR';
+     43:str:='43:NO MATCHING ELEMENT FOR LET';
     ELSE
        str:='STRANGE ERROR NUMBER'
     END;
@@ -534,6 +538,12 @@ BEGIN
   ERROR(42,0)
 END;
 
+{***************************************************************************}
+PROCEDURE MATCH_IN_LET_ERROR;
+BEGIN
+  ERROR(43,0)
+END;
+
 
 {***************************************************************************}
 Procedure ErrorReport;
@@ -567,7 +577,7 @@ end;
 procedure ReadConfig;
 var
    line_len,count,p:integer;
-   line_str,libpath_str,spicepath_str,mcadpath_str:string;
+   line_str,libpath_str,spicepath_str,mcadpath_str,tick_str,gui_str:string;
 label next_line;
 begin
 
@@ -655,6 +665,35 @@ begin
                     count:=line_len-p+1;
                     if count>4 then count:=4;
                     ext_mcad_str:=Copy(line_str,p,count);
+               end;
+          goto next_line;
+          end;
+
+          if(Pos('TICK',line_str)<>0) then
+          begin
+               p:=pos(' ',line_str);
+               if (p>0) then
+               begin
+                    count:=line_len-p+1;
+                    tick_str:=Trim(Copy(line_str,p,count));
+                    Timer1_Tick:=StrToInt(tick_str);
+               end;
+          goto next_line;
+          end;
+
+          if(Pos('GUI',line_str)<>0) then
+          begin
+               p:=pos(' ',line_str);
+               if (p>0) then
+               begin
+                    count:=line_len-p+1;
+                    gui_str:=Trim(Copy(line_str,p,count));
+                    if StrToInt(gui_str) <> 0 then begin                         
+                        GUI_flag:= True;
+                    end    
+                    else begin
+                        GUI_flag:= False;
+                    end    
                end;
           goto next_line;
           end;
@@ -857,7 +896,7 @@ procedure Amp_exe;
 begin
 
 
-     GetConfig;
+     
 
      if ParamCount=0 then
      begin
@@ -921,6 +960,7 @@ begin
      Edit1.Text:='';
      Edit2.Text:='';
      Memo1.Clear;
+     
      Timer1.Enabled:=True;
 end;
 
@@ -930,6 +970,12 @@ begin
     1:
     begin
          programstate:=2;
+         GetConfig;         
+         if GUI_flag then begin   
+            Form1.Show;
+            Form1.Update;
+         end;   
+         Timer1.Interval:=Timer1_Tick;            
          Amp_exe;
     end;
     2:

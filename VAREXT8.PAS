@@ -48,7 +48,16 @@ VAR
  NS_PT:drpt;             {* ReTF and ImTF accepted as a result            *}
  SS_PT:drpt;             {* STFre &  STFim accepted for succesive sensors *}
  eYn_PT:drpt;            {* Results of SCONV analysis                     *}
- mcadfilenum:INTEGER;    {* MCAD file extension number                    *}
+ 
+ mcadfilenum:INTEGER;    {* MCAD *mXX file extension number                    *}
+ mcaddirfile:BOOLEAN;
+
+ mcad_numberMajor:INTEGER;      {* trace task major - change should result in new values listing *}
+ mcad_numberMiddle:INTEGER;     {* trace task middle - change should result in new values listing *}
+
+ mcad_values_flag:BOOLEAN;
+ mvalfilenum:INTEGER;    {* MCAD VALUES *mvXX file extension number    *}
+ mvaldirfile:BOOLEAN;
 
  probes_flag:BOOLEAN;
  PROBES_TF_PT:listapt;

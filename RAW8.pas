@@ -6,6 +6,7 @@ USES
 
  PROCEDURE RAW_TF(job:taskpt);
  PROCEDURE RAW_TF_SENS(job:taskpt);
+ PROCEDURE RAW_D(job:taskpt);
  PROCEDURE WRITE_RAW_FILES;
 
 implementation
@@ -543,6 +544,70 @@ End;
       ADD_RAW_LISTB_TO_POINTS(RAW_FILE_PT^.point_list_pt, job^.FREQ_PT);
       ADD_RAW_VARNAME(RAW_FILE_PT^.var_list_pt,TF_name);
       ADD_RAW_DR_TO_POINTS(RAW_FILE_PT^.point_list_pt, TFri_PT);
+    end
+ END;
+
+
+{***************************************************************************
+ Add data to raw list structure
+ Check the number of freq points:
+  if equal then add points
+  else create new file and start with the begginig
+
+ @version - 1.0
+ @param job:taskpt - pointer to the current task
+ ***************************************************************************}
+
+ PROCEDURE RAW_D(job:taskpt);
+ VAR 
+  d_ptr:dptr;
+ 
+ BEGIN
+
+    d_ptr:=job^.COFF_PT;
+    WHILE d_ptr<>NIL DO
+    BEGIN
+     d_ptr^.drfpt:=d_ptr^.CF_PT;
+     d_ptr:=d_ptr^.dnext
+    END;   
+   
+    RAW_FILE_PT := FIND_RAW_MATCHING_JOB(job);
+    if (( RAW_FILE_PT <> nil)) then begin      
+     if ( REAL_ELEMENT_COUNTER(job^.FREQ_PT) = RAW_FILE_PT^.raw_data_rec.num_of_points ) then begin
+ 
+        d_ptr:=job^.COFF_PT;
+        while d_ptr<>NIL do
+        begin
+         RAW_FILE_PT^.raw_data_rec.num_of_var:=RAW_FILE_PT^.raw_data_rec.num_of_var+1;
+         ADD_RAW_VARNAME(RAW_FILE_PT^.var_list_pt,d_ptr^.dname);
+         ADD_RAW_DR_TO_POINTS(RAW_FILE_PT^.point_list_pt, d_ptr^.CF_PT);
+         d_ptr:=d_ptr^.dnext
+        end
+            
+     end
+     else
+     begin
+        RAW_POINTS_ERROR;  // Major, Middle numbers indicate that data should belong to current set of data
+     end
+    end
+    else begin
+      
+      RAW_FILE_PT:= ALLOC_NEW_RAW_FILE(job); // Major, Middle numbers indicate that data should belong to new *.r file 
+
+      RAW_FILE_PT^.raw_data_rec.num_of_var:=1;
+      RAW_FILE_PT^.raw_data_rec.num_of_points:=REAL_ELEMENT_COUNTER(job^.FREQ_PT);
+      ADD_RAW_VARNAME(RAW_FILE_PT^.var_list_pt,'frequency');
+      ADD_RAW_LISTB_TO_POINTS(RAW_FILE_PT^.point_list_pt, job^.FREQ_PT);
+      
+      d_ptr:=job^.COFF_PT;
+      while d_ptr<>NIL do
+      begin
+       RAW_FILE_PT^.raw_data_rec.num_of_var:=RAW_FILE_PT^.raw_data_rec.num_of_var+1;
+       ADD_RAW_VARNAME(RAW_FILE_PT^.var_list_pt,d_ptr^.dname);
+       ADD_RAW_DR_TO_POINTS(RAW_FILE_PT^.point_list_pt, d_ptr^.CF_PT);
+       d_ptr:=d_ptr^.dnext
+      end      
+    
     end
  END;
 

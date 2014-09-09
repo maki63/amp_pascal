@@ -67,21 +67,31 @@ BEGIN
  format_MP_flag:=TRUE;          { default }
  format_RI_flag:=TRUE;          { default }
 
- mcaddirfile:=FALSE;
+ 
  RAW_LIST_PT:=nil; {* this flag can not be touched  by RESET_SWITCHES *}
  RAW_FILE_PT:=nil;
+ raw:=FALSE;
+ 
+ mcad:=FALSE;
+ mcaddirfile:=FALSE; {* true when *.m0 is created *}
+ mvaldirfile:=FALSE; {* true when *.mv0 is created *}
+ mcad_values_flag:=FALSE; {* set by $MCAD VAL command to enable component values listing in *mvXX files *}
+
+ mcadfilenum:=1;
+ mvalfilenum:=1;
+ mcad_numberMajor:=0;
+ mcad_numberMiddle:=0;
+ 
 END;
 
 {***************************************************************************}
 
 PROCEDURE RESET_SWITCHES;
 BEGIN
- mcad:=FALSE;
  sens:=FALSE;
  transfer:=FALSE;
  generator:=FALSE;
- disto:=FALSE;
- raw:=FALSE;
+ disto:=FALSE; 
 END;
 
 {***************************************************************************}
@@ -101,7 +111,16 @@ END;
    cpt2:=cpt1;
    c:=line[cpt1+1];
    CASE c OF
-    'm','M':mcad:=TRUE;                      {* $MCAD   *}
+    'm','M':  begin
+              c:=line[cpt1+2];
+              case c of
+              'c','C':
+                mcad:=TRUE;                 {* $MCAD   *}   
+              end;
+              CheckLine:=UpperCase(line);   {* $MCAD VAL  *}
+              mcad_values_flag:=FALSE;              
+              if ( Pos('VAL',CheckLine)<>0 )  then  mcad_values_flag:=TRUE;               
+              end;                          
     'r','R': begin
               c:=line[cpt1+2];
               case c of
@@ -300,13 +319,23 @@ BEGIN
 
  END;
 
+{* Print out D for standard flag *}
+ 
  IF standard THEN BEGIN
   OUT_FLUSH;
   WRITE_RESULTS(job);
-  OUT_FLUSH;
-  IF mcad THEN WRITE_MCAD(job)
- END
-
+  OUT_FLUSH;  
+ END;
+ 
+{* Mcad out D for standard - but trace might have clear it above *}
+ IF (mcad) AND (not transfer) AND (not generator)  THEN MCAD_D(job);
+ IF (raw)  AND (not transfer) AND (not generator)  THEN RAW_D(job);
+ 
+ {* Mcad values update for change in  *}
+ if (mcad_values_flag) AND 
+    ((mcad_numberMajor <> job^.numberMajor ) OR (mcad_numberMiddle <> job^.numberMiddle )) 
+    then  MCAD_VAL(job); 
+ 
 END;
 
 

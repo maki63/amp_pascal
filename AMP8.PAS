@@ -107,7 +107,7 @@ BEGIN
  CHECK_TOPOLOGY;
 
  LIST_BATCH;
- mcadfilenum:=1;
+
  WRITELN(RESULTS,asterix,version,asterix);
  WRITELN(RESULTS,'DATE:'+DateToStr(Date));
  WRITELN(RESULTS,'TIME:'+TimeToStr(Time));
@@ -144,6 +144,7 @@ BEGIN
 
       SET_TASK(job);
       SET_PAR_COMP(job);                 // set PAR_PT list and PAR components
+      APPLY_LET_LIST(job);
       if trace then EXEC_TRACE(job);
       repeat
           CLEAR_RESULTS(job);

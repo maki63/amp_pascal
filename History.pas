@@ -5,6 +5,34 @@ interface
 implementation
 {
    Amp8_D
+	 10.09.2014
+   build 8.13.14.1
+   GUI  - in amp.ini to show/hide GUI ;
+
+   Amp8_D
+	 09.09.2014
+   build 8.13.13.1
+   TICK  - in amp.ini to configure timer in forms - default changed to 1ms;
+
+   Amp8_D
+	 06.09.2014
+   build 8.13.12.1
+   $LET  - to change component values ;
+
+   Amp8_D
+	 03.09.2014
+   build 8.13.11.1
+   $MCAD VAL - to generate *.mvXX files for each major or middle change ;
+
+
+   Amp8_D
+	 03.09.2014
+   build 8.13.10.1
+   $MCAD for D
+   $RAW for D
+   $MCAD, $RAW set by SET_SWITCHES - not reset by RESET_SWITCHES;
+
+   Amp8_D
 	 20.07.2014
    build 8.13.9.1
    $PAR when not present generates an ERROR
