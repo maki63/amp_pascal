@@ -91,15 +91,17 @@ VAR
           Lp:=rv*Qr/(2*pi*Fr);
           Cp:=1/(Lp*(2*pi*Fr)*(2*pi*Fr));
           STR(Lp,sm_val);
-          s_mod:=CONCAT('L.'+rname+'    '+s_c+' '+s_b+'    '+sm_val);
+          s_mod:=CONCAT('lp.'+rname+'    '+s_c+' '+s_b+'    '+sm_val);
           CLEAR_LINE;
           INSERT(s_mod,line,1);
           ADD_TO_LISTA(EXTENDED_COMP_PT, EXTENDED_COMP_TAIL_PT);
           STR(Cp,sm_val);
-          s_mod:=CONCAT('C.'+rname+'    '+s_a+' '+s_b+'    '+sm_val);
+          s_mod:=CONCAT('cp.'+rname+'    '+s_a+' '+s_b+'    '+sm_val);
           CLEAR_LINE;
           INSERT(s_mod,line,1);
           ADD_TO_LISTA(EXTENDED_COMP_PT, EXTENDED_COMP_TAIL_PT);
+          mod_fr := Fr;
+          mod_qr := Qr;
         end
         else begin
           line:=line_pt^.oneline;
@@ -123,15 +125,17 @@ VAR
           Rp:=(2*pi*Fr)*lv/Qr;
           Cp:=1/(lv*(2*pi*Fr)*(2*pi*Fr));
           STR(Rp,sm_val);
-          s_mod:=CONCAT('R.'+lname+'    '+s_c+' '+s_b+'    '+sm_val);
+          s_mod:=CONCAT('rp.'+lname+'    '+s_c+' '+s_b+'    '+sm_val);
           CLEAR_LINE;
           INSERT(s_mod,line,1);
           ADD_TO_LISTA(EXTENDED_COMP_PT, EXTENDED_COMP_TAIL_PT);
           STR(Cp,sm_val);
-          s_mod:=CONCAT('C.'+lname+'    '+s_a+' '+s_b+'    '+sm_val);
+          s_mod:=CONCAT('cp.'+lname+'    '+s_a+' '+s_b+'    '+sm_val);
           CLEAR_LINE;
           INSERT(s_mod,line,1);
           ADD_TO_LISTA(EXTENDED_COMP_PT, EXTENDED_COMP_TAIL_PT);
+          mod_fr := Fr;
+          mod_qr := Qr;
         end
         else begin
           line:=line_pt^.oneline;
@@ -156,15 +160,17 @@ VAR
           Lp:=1/(cv*(2*pi*Fr)*(2*pi*Fr));
           Rp:=(2*pi*Fr)*Lp/Qr;
           STR(Rp,sm_val);
-          s_mod:=CONCAT('R.'+cname+'    '+s_c+' '+s_d+'    '+sm_val);
+          s_mod:=CONCAT('rp.'+cname+'    '+s_c+' '+s_d+'    '+sm_val);
           CLEAR_LINE;
           INSERT(s_mod,line,1);
           ADD_TO_LISTA(EXTENDED_COMP_PT, EXTENDED_COMP_TAIL_PT);
           STR(Lp,sm_val);
-          s_mod:=CONCAT('L.'+cname+'    '+s_d+' '+s_b+'    '+sm_val);
+          s_mod:=CONCAT('lp.'+cname+'    '+s_d+' '+s_b+'    '+sm_val);
           CLEAR_LINE;
           INSERT(s_mod,line,1);
           ADD_TO_LISTA(EXTENDED_COMP_PT, EXTENDED_COMP_TAIL_PT);
+          mod_fr := Fr;
+          mod_qr := Qr;
         end
         else begin
           line:=line_pt^.oneline;
@@ -641,10 +647,11 @@ VAR
     with r_ptr^ do begin
       if ( rvar=MODEL_DEF ) then begin
         if ( rref=mod_name ) then begin
-
+          mod_fr := Fr;
+          mod_qr := Qr; 
           Lp:=rv*Qr/(2*pi*Fr);
           Cp:=1/(Lp*(2*pi*Fr)*(2*pi*Fr));
-          s_mod:=CONCAT('L.'+rname);
+          s_mod:=CONCAT('lp.'+rname);
           l_ptr:=L_head;
           parasitic_found:=FALSE;
           while ( l_ptr<>NIL ) do begin
@@ -657,11 +664,11 @@ VAR
             l_ptr:=l_ptr^.lnext;
           end;
           if ( not parasitic_found ) then begin
-            line:=line + 'NO Lp FOUND FOR ' + rname;
+            line:=line + 'NO lp FOUND FOR ' + rname;
             INTERNAL_ERROR;
           end;
 
-          s_mod:=CONCAT('C.'+rname);
+          s_mod:=CONCAT('cp.'+rname);
           c_ptr:=C_head;
           parasitic_found:=FALSE;
           while ( c_ptr<>NIL ) do begin
@@ -674,7 +681,7 @@ VAR
             c_ptr:=c_ptr^.cnext;
           end;
           if ( not parasitic_found ) then begin
-            line:=line + 'NO Cp FOUND FOR ' + rname;
+            line:=line + 'NO cp FOUND FOR ' + rname;
             INTERNAL_ERROR;
           end;
 
@@ -689,11 +696,12 @@ VAR
     with l_ptr^ do begin
       if ( lvar = MODEL_DEF ) then begin
         if ( lref=mod_name ) then begin
-
+          mod_fr := Fr;
+          mod_qr := Qr; 
           Rp:=(2*pi*Fr)*lv/Qr;
           Cp:=1/(lv*(2*pi*Fr)*(2*pi*Fr));
 
-          s_mod:=CONCAT('R.'+lname);
+          s_mod:=CONCAT('rp.'+lname);
           r_ptr:=R_head;
           parasitic_found:=FALSE;
           while ( r_ptr<>NIL ) do begin
@@ -706,11 +714,11 @@ VAR
             r_ptr:=r_ptr^.rnext;
           end;
           if ( not parasitic_found ) then begin
-            line:=line + 'NO Rp FOUND FOR ' + lname;
+            line:=line + 'NO rp FOUND FOR ' + lname;
             INTERNAL_ERROR;
           end;
 
-          s_mod:=CONCAT('C.'+lname);
+          s_mod:=CONCAT('cp.'+lname);
           c_ptr:=C_head;
           parasitic_found:=FALSE;
           while ( c_ptr<>NIL ) do begin
@@ -723,7 +731,7 @@ VAR
             c_ptr:=c_ptr^.cnext;
           end;
           if ( not parasitic_found ) then begin
-            line:=line + 'NO Cp FOUND FOR ' + lname;
+            line:=line + 'NO cp FOUND FOR ' + lname;
             INTERNAL_ERROR;
           end;
 
@@ -738,10 +746,13 @@ VAR
     with c_ptr^ do begin
       if ( cvar = MODEL_DEF ) then begin
         if ( cref=mod_name ) then begin
+          
+          mod_fr := Fr;
+          mod_qr := Qr; 
           Lp:=1/(cv*(2*pi*Fr)*(2*pi*Fr));
           Rp:=(2*pi*Fr)*Lp/Qr;
 
-          s_mod:=CONCAT('R.'+cname);
+          s_mod:=CONCAT('rp.'+cname);
           r_ptr:=R_head;
           parasitic_found:=FALSE;
           while ( r_ptr<>NIL ) do begin
@@ -754,11 +765,11 @@ VAR
             r_ptr:=r_ptr^.rnext;
           end;
           if ( not parasitic_found ) then begin
-            line:=line + 'NO Rp FOUND FOR ' + cname;
+            line:=line + 'NO rp FOUND FOR ' + cname;
             INTERNAL_ERROR;
           end;
 
-          s_mod:=CONCAT('L.'+cname);
+          s_mod:=CONCAT('lp.'+cname);
           l_ptr:=L_head;
           parasitic_found:=FALSE;
           while ( l_ptr<>NIL ) do begin
@@ -771,7 +782,7 @@ VAR
             l_ptr:=l_ptr^.lnext;
           end;
           if ( not parasitic_found ) then begin
-            line:=line + 'NO Lp FOUND FOR ' + cname;
+            line:=line + 'NO lp FOUND FOR ' + cname;
             INTERNAL_ERROR;
           end;
 

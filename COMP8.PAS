@@ -213,7 +213,7 @@ BEGIN
 
       ysens_ptr:=Ys_HEAD_PT; { assign values to the existing list }
       case ( yvar ) of
-      CONSTANT: begin
+      CONSTANT, PARAM: begin
                   while ( ysens_ptr<>NIL ) do begin
                     ysens_ptr^.valre:=yvre;
                     ysens_ptr^.valim:=yvim;
@@ -268,7 +268,7 @@ BEGIN
 
       ysens_ptr:=Ys_HEAD_PT; { assign values to the existing list }
       case ( gvar ) of
-      CONSTANT: begin
+      CONSTANT, PARAM: begin
                   ysens_ptr:=Ysens_HEAD_PT; { assign values to the existing list }
                   while ( ysens_ptr<>NIL ) do begin
                     ysens_ptr^.valre:=gvre;
@@ -324,7 +324,7 @@ BEGIN
 
       ysens_ptr:=Ys_HEAD_PT; { assign values to the existing list }
       case ( zvar ) of
-      CONSTANT: begin
+      CONSTANT, PARAM: begin
                   while ( ysens_ptr<>NIL ) do begin
                     ysens_ptr^.valre := -(zvre)/(zvre*zvre+zvim*zvim);   {change of sign for STF[Z]=-STF[Y=1/Z]}
                     ysens_ptr^.valim := +(zvim)/(zvre*zvre+zvim*zvim);
@@ -373,7 +373,7 @@ BEGIN
 
       ysens_ptr:=Ys_HEAD_PT; { assign values to the existing list }
       case ( rvar ) of
-      CONSTANT: begin
+      CONSTANT, MODEL_DEF, PARAM: begin
                   while ( ysens_ptr<>NIL ) do begin
                     ysens_ptr^.valre:=-1.0/rv;   {change of sign for STF[R]=-STF[Y=1/R]}
                     ysens_ptr^.valim:=0.0;
@@ -417,7 +417,7 @@ BEGIN
 
     ysens_ptr:=Ys_HEAD_PT; { assign values to the existing list }
     case ( cvar ) of
-    CONSTANT: begin
+    CONSTANT, MODEL_DEF, PARAM: begin
 
                   while ( ysens_ptr<>NIL ) do begin
                     freq:=f_ptr^.value;
@@ -468,7 +468,7 @@ BEGIN
 
     ysens_ptr:=Ys_HEAD_PT; { assign values to the existing list }
     case ( lvar ) of
-    CONSTANT: begin
+    CONSTANT, MODEL_DEF, PARAM: begin
                   while ( ysens_ptr<>NIL ) do begin
                     freq:=f_ptr^.value;
                     if ( freq=0.0 ) then begin

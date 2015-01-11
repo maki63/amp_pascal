@@ -574,6 +574,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
  {*copy frequency list                                                    *}
  newtask^.FREQ_PT:=job^.FREQ_PT;
  newtask^.COFF_PT:=NIL;
@@ -811,6 +812,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
 
  {*copy frequency list                                                   *}
  newtask^.FREQ_PT:=job^.FREQ_PT;
@@ -907,6 +909,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
 
  newtask^.TUN_PT:=job^.TUN_PT;
  newtask^.COFF_PT:=NIL;
@@ -980,6 +983,8 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
+
  newtask^.FREQ_PT:=prevtask^.FREQ_PT;
  newtask^.VAR_PT:=prevtask^.VAR_PT;
  newtask^.TRIM_PT:=prevtask^.TRIM_PT;
@@ -1270,6 +1275,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
  {*copy frequency list                                                    *}
  newtask^.FREQ_PT:=job^.FREQ_PT;
  newtask^.COFF_PT:=NIL;
@@ -1382,6 +1388,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
 {*copy frequency list                                                   *}
 {* ctrl - list consist of proprer solutions                             *}
 {* VAR_LIST without changes                                             *}
@@ -1497,6 +1504,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
  newtask^.TUN_PT:=job^.TUN_PT;
 
  newtask^.COFF_PT:=NIL;
@@ -1570,6 +1578,7 @@ BEGIN
  newtask^.numberMajor:=job^.numberMajor+1;
  newtask^.numberMiddle:=0;
  newtask^.numberMinor:=0;
+ newtask^.task_name:=job^.task_name;
  newtask^.FREQ_PT:=prevtask^.FREQ_PT;
  newtask^.VAR_PT:=prevtask^.VAR_PT;
  newtask^.TRIM_PT:=prevtask^.TRIM_PT;

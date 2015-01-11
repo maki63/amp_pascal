@@ -60,13 +60,25 @@ FUNCTION FND(c1,c2:CHAR;k:INTEGER):INTEGER;
 VAR
 l,llen:INTEGER;
 BEGIN
-llen:=LENGTH(line);
-l:=k;
-IF k<llen THEN
- WHILE NOT(((ORD(line[l])>=ORD(c1))AND(ORD(line[l])<=ORD(c2)))OR(l>llen)) DO
- l:=l+1;
- IF l>llen THEN BEGIN xx:=TRUE ;l:=k END;
- FND:=l
+    
+    llen:=LENGTH(line);
+    l:=k;
+        
+    if k<=llen then
+    begin
+     while (l<=llen) do
+     begin
+      if ((ORD(line[l])>=ORD(c1))AND(ORD(line[l])<=ORD(c2))) then break
+      else l:=l+1;
+     end
+    end;
+    
+    if l>llen then  
+    begin 
+      xx:=TRUE;
+    end;  
+    
+    FND:=l
 END;
 
 {********************************************************}
@@ -77,40 +89,47 @@ PROCEDURE RRL;
 VAR
 
  r1s:STRING;
- cpt3,code:INTEGER;
+ code,cpt3:INTEGER;
 
 BEGIN {RRL}
 
- cpt1:=FND('!','z',cpt2);
- {cpt2:=FND(CHR(13),' ',cpt1);}
- cpt2:=FND(CHR(09),' ',cpt1);
- r1s:=COPY(line,cpt1,(cpt2-cpt1));
- VAL(r1s,rr,code);
- IF code<>0 THEN
- BEGIN
- {* THIS IS NOT A NUBMER IN SCIENTIFIC NOTATION                     *}
- {* THE ERROR CAN BE CAUSED BY POST-FIX;THE LAST CHAR IN STRING     *}
-  xx:=FALSE;
-  cpt3:=FND('A','z',cpt1);
-  IF (cpt2-cpt3)=1 THEN BEGIN
-    r1s:=COPY(line,cpt1,(cpt3-cpt1));
-    VAL(r1s,rr,code);
-    IF code=0 THEN BEGIN
-      CASE line[cpt3] OF
-      'p': rr:=rr*1.0E-12;
-      'n': rr:=rr*1.0E-9;
-      'u': rr:=rr*1.0E-6;
-      'm': rr:=rr*1.0E-3;
-  'k','K': rr:=rr*1.0E+3;
-      'M': rr:=rr*1.0E+6;
-      'G': rr:=rr*1.0E+9;
-      'T': rr:=rr*1.0E+12;
-      ELSE xx:=TRUE
-      END
-    END
-  END
-  ELSE xx:=TRUE
- END
+ cpt1:=FND('+','9',cpt2);
+ if not xx then 
+ begin  
+     cpt2:=FND(CHR(9),' ',cpt1); {* CHR(9) is in a right place, don't try to be clever and change it into ' ' *}
+     if xx then 
+     begin 
+        cpt2:=LENGTH(line)+1 ; {* xx means the end of line was hit, set cpt2 at beyond the end of line *}
+     end;        
+     r1s:=COPY(line, cpt1, cpt2-cpt1); {* cpt2 points at first white space or one char beyond line *}     
+     xx:=FALSE;
+     VAL(r1s,rr,code);
+     if code<>0 then
+     begin
+     {* THIS IS NOT A NUBMER IN SCIENTIFIC NOTATION                     *}
+     {* THE ERROR CAN BE CAUSED BY POST-FIX;THE LAST CHAR IN STRING     *}
+        
+        cpt3:=FND('A','z',cpt1);              {* find first leter in a digit but leave cpt2 as it was ! *}
+        r1s:=COPY(line,cpt1,(cpt3-cpt1));
+        VAL(r1s,rr,code);
+        if ((code=0) and (not xx)) then   {* not xx means that character line[cpt3] was found *}
+        begin
+          case line[cpt3] of
+          'f': rr:=rr*1.0E-15;
+          'p': rr:=rr*1.0E-12;
+          'n': rr:=rr*1.0E-9;
+          'u': rr:=rr*1.0E-6;
+          'm': rr:=rr*1.0E-3;
+      'k','K': rr:=rr*1.0E+3;
+          'M': rr:=rr*1.0E+6;
+          'G': rr:=rr*1.0E+9;
+          'T': rr:=rr*1.0E+12;
+          else xx:=TRUE;
+          end
+        end
+        else xx:=TRUE;
+     end
+  end    
 END;{RRL}
 
 {********************************************************}

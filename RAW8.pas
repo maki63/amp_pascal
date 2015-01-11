@@ -500,6 +500,7 @@ Begin
     
     p_raw_file^.numberMajor:=job^.numberMajor; // references for Major, Middle
     p_raw_file^.numberMiddle:=job^.numberMiddle; // all jobs with equal Major & Middle goes to the same file
+    p_raw_file^.task_name:=job^.task_name;
     if (p_raw_file^.numberMiddle > 0) then begin
        p_raw_file^.para_descr := LIST_RAW_PAR_COMP(job );   // add list of params to file description when Middle > 0 i.e. there are some params  
     end;        
@@ -619,15 +620,14 @@ End;
  err:INTEGER;
  BEGIN
   INFO('OPENING:'+RAWSTR);
+  if not DirectoryExists(RAWDIRSTR) then CreateDir(RAWDIRSTR);
   {$I-}
-  ASSIGN(RAWF,RAWSTR);
+  ASSIGNFile(RAWF,RAWSTR);
   REWRITE(RAWF);
   {$I+}
   err:=IOResult;
   IF err<>0 THEN
   BEGIN
-   ASSIGN(RAWF,'NUL');
-   REWRITE(RAWF);
    ERROR(4,err)
   END
  END;
@@ -641,15 +641,13 @@ End;
  BEGIN
   INFO('CLOSING:'+RAWSTR);
  {$I-}
-  CLOSE(RAWF);
+  CLOSEFile(RAWF);
  {$I+}
   err:=IOresult;
   IF err<>0 THEN
   BEGIN
    ERROR(6,err);
   END;
-  ASSIGN(RAWF,'NUL');
-  REWRITE(RAWF);
   RAWSTR:='NUL'
  END;
 
@@ -721,15 +719,33 @@ End;
 
  PROCEDURE WRITE_ONE_RAW_FILE(f_pt:raw_file_pt_type; n:integer);
  VAR
-   nstr:string;
+   n_str:string;
    p:integer;
+   path_str :string;
+   name_str :string;
+   r_string:string;
+
  BEGIN
-   STR(n,nstr);
-   nstr:=CONCAT('r',nstr);
-   p:=POS('.',OUTSTR);
-   RAWSTR:=Copy(OUTSTR,1,p)+nstr;
+
+   
+   path_str := ExtractFilePath(OUTSTR);
+   name_str := ExtractFileName(OUTSTR);
+   
+   STR(n,n_str);
+   n_str:=CONCAT('r',n_str);
+   
+   p:=POS('.',name_str);
+   if p<>0 then begin
+    r_string:=Copy(name_str,1,p)+n_str;
+   end
+   else begin
+    r_string:=name_str+'.'+n_str;
+   end;
+      
+   RAWSTR := path_str+ RAWDIRSTR +'\'+r_string;
+
    RAW_OPEN;
-   WRITELN(RAWF,'Title: Amp AC analysis results for Tasks = ', f_pt^.numberMajor, '.', f_pt^.numberMiddle,'.*  ', f_pt^.para_descr);
+   WRITELN(RAWF,'Title: Amp AC analysis results for Tasks = (', f_pt^.numberMajor, '.', f_pt^.numberMiddle,'.* ):', f_pt^.task_name, ' ', f_pt^.para_descr);
    WRITELN(RAWF,'Date:'+DateToStr(Date)+' at '+ TimeToStr(Time) );
    WRITELN(RAWF,'Plotname: AC Analysis');
    WRITELN(RAWF,'Flags: complex');

@@ -73,12 +73,12 @@ BEGIN
  raw:=FALSE;
  
  mcad:=FALSE;
- mcaddirfile:=FALSE; {* true when *.m0 is created *}
- mvaldirfile:=FALSE; {* true when *.mv0 is created *}
- mcad_values_flag:=FALSE; {* set by $MCAD VAL command to enable component values listing in *mvXX files *}
+ mcaddirfile_flag:=FALSE; {* true when *.m0 is created *}
+ valdirfile_flag:=FALSE; {* true when *.v0 is created *}
+ mcad_values_flag:=FALSE; {* set by $MCAD VAL command to enable component values listing in *.vXX files *}
 
  mcadfilenum:=1;
- mvalfilenum:=1;
+ valfilenum:=1;
  mcad_numberMajor:=0;
  mcad_numberMiddle:=0;
  
@@ -140,10 +140,21 @@ END;
              c:=line[cpt1+2];
              CASE c OF
              'r','R':trace:=TRUE;
-             'f','F':transfer:=TRUE
+             'f','F':transfer:=TRUE;
+             'n','N': begin
+                        xx:=FALSE;
+                        cpt1:=FND('!','z',cpt1+3);
+                        cpt2:=LENGTH(line);
+                        if not xx then job^.task_name:=COPY(line,cpt1,cpt2);
+                      end              
              END
             END;
-    's','S':sens:=TRUE;                      {* $SENS   *}
+    's','S':BEGIN                           {* $SENS  OR $SET  *}   
+             c:=line[cpt1+3];
+             CASE c OF
+             'n','N':    sens:=TRUE;         {* $SENS   *}
+             END
+            END;
     'h','H':disto:=TRUE;                     {* $HARM   *}
     'f','F':begin
               CheckLine:=UpperCase(line);        {* $FORMAT dB MP RI  *}

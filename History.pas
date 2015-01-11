@@ -5,6 +5,66 @@ interface
 implementation
 {
    Amp8_D
+	 22.12.2014
+   build 8.13.26.1
+   bug fix $MAT due to change in RRL, FND and READREAL
+
+   Amp8_D
+	 14.12.2014
+   build 8.13.25.1
+   bug fixes due to bug fix in RRL, FND and READREAL
+
+   Amp8_D
+	 12.12.2014
+   build 8.13.24.1
+   bug fix in RRL
+
+   Amp8_D
+	 11.12.2014
+   build 8.13.23.1
+   bug fix: $LIB with semicolons
+
+   Amp8_D
+	 08.12.2014
+   build 8.13.22.1
+   X with hierarchy
+
+   Amp8_D
+	 15.11.2014
+   build 8.13.21.1
+   bug fix: $LIB when in commands is not mistaken as $LET 
+
+   Amp8_D
+	 13.11.2014
+   build 8.13.20.1
+   semicolon as a command separator, yet $INC still have to be a single line command 
+
+   Amp8_D
+	 28.10.2014
+   build 8.13.19.1
+   Amp_calc is a thread
+
+   Amp8_D
+	 04.10.2014
+   build 8.13.18.1
+   MODEL_DRV removed
+   MODEL_DEF, PARAM understood by CALC_Ysens_X
+
+   Amp8_D
+	 25.09.2014
+   build 8.13.17.1
+   $TN for task name
+
+   build 8.13.16.1
+   $LET for R,L,C causes model to update
+
+   Amp8_D
+	 10.09.2014
+   build 8.13.15.1
+   MCADDIR, RAWDIR  - in amp.ini to create separate folders for MCAD/ RAW ;
+   SENS for TF are in separate files
+
+   Amp8_D
 	 10.09.2014
    build 8.13.14.1
    GUI  - in amp.ini to show/hide GUI ;

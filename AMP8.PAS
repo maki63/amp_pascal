@@ -3,8 +3,8 @@
  AMP is top level sequencer routine
  EXEC_TRACE - gives extra debug output
 
- @version - 8.B
- short loop for $PAR update parameters in a task 
+ @version - 8.D
+ short loop for $PAR update parameters in a task
  ***************************************************************************}
 
 {$DEFINE notDebug}
@@ -45,7 +45,7 @@ USES Amp8_main;
     end;
     TRACE_TASK(job);
     WRITELN(RESULTS,asterix,version,asterix);
-    WRITELN(RESULTS,'TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+    WRITELN(RESULTS,'TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor, ' ', job^.task_name);
     WRITELN(RESULTS,'COMMANDS:');
     LIST_LISTA(job^.COMD_PT);
     WRITELN(RESULTS,'DECLARATIONS:');
@@ -68,25 +68,25 @@ BEGIN
  READ_BATCH;
  IN_CLOSE;
 
- INCLUDE_INC_FILES;
+ INCLUDE_INC_FILES;  {* $INC has to be a single line command *}
+
+ EXPAND_SEPARATED_COMMANDS;
+
+ LIST_BATCH;
 
  EXTRACT_JOB_NAME;
 
  EXTRACT_COMPONENTS;
 
- EXTRACT_LIB_FILES;
- EXTRACT_LIB_CALLS;
- CREATE_LIB_DEF;
- SET_UP_LIB_DEF;
- PREPARE_LIB_CALLS;
+ EXTRACT_LIB_FILES;  {* search for $LIB commands and put them into LIB_FILES_PT^ list  *}
+ EXTRACT_LIB_CALLS;  {* search for X-components and put them into LIB_CALLS_PT^ list   *}
 
  ADD_COMPONENTS;
 
  FNN;
- MACRO_NODES;
+ MACRO_NODES;       {*  update nn - number for calls of MACROMODELS in LIB_CALLS_PT^  *}
 
- SET_UP_LIB_CALLS;
- EXTRACT_LIB_COMP;
+ CREATE_LIB_COMPONENTS;
  ADD_LIB_COMPONENTS;
 
  EXTRACT_TASKS;
@@ -106,11 +106,17 @@ BEGIN
 
  CHECK_TOPOLOGY;
 
- LIST_BATCH;
-
  WRITELN(RESULTS,asterix,version,asterix);
  WRITELN(RESULTS,'DATE:'+DateToStr(Date));
  WRITELN(RESULTS,'TIME:'+TimeToStr(Time));
+
+ {$IFDEF Debug}
+  if ( LIB_FILES_PT <> NIL) then TRACE_LIB;
+  if ( EXTENDED_COMP_PT <> NIL ) then LIST_EXTENDED_COMP;
+  if ( EXPANDED_COMP_PT <> NIL ) then LIST_EXPANDED_COMP;
+  if ( MAT_COMP_PT <> NIL ) then LIST_MAT_COMP;
+  if ( MAT_PT <> NIL) then LIST_MATRIX;
+ {$ENDIF}
 
  job:=TASK_PT;
  while job<>NIL do begin
@@ -130,21 +136,24 @@ BEGIN
       end;
 
      {$IFDEF Debug}
-        LIST_DEBUG_INFO('MATRIX DATA INTERPOLATED');
-        LIST_MATRIX;
+     TRACE_TASK(job);
+     LIST_DEBUG_INFO('MATRIX DATA INTERPOLATED');
+     LIST_MATRIX;
      {$ENDIF}
 
       if ( T_head<>NIL ) then begin
           INSERT_MODEL_VAR_LISTS(job);    // incorporate $VAR lists from T into task CDEF_PT }
       end;
+      
       SET_VARIABLE_COMP(job);           // set up VAR and TUNE lists
+      
       if ( job<>TASK_PT ) then begin
-          UPDATE_MOD_COMPONENTS(job);     // this is perhaps not effective but i can't see other way
+          UPDATE_MOD_COMPONENTS(job);     // this the way to have different MOD for another task 
       end;
 
       SET_TASK(job);
       SET_PAR_COMP(job);                 // set PAR_PT list and PAR components
-      APPLY_LET_LIST(job);
+      APPLY_LET_LIST(job);               // change values of the components and parasitics for MOD if R,L,C
       if trace then EXEC_TRACE(job);
       repeat
           CLEAR_RESULTS(job);

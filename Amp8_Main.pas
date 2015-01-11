@@ -66,6 +66,23 @@ type
     property OnFinished : TProcessEvent read FOnFinished write FOnFinished;
   end;
 
+{$DEFINE AMP_AS_THREAD}
+
+
+  TMyThread = class(TThread)
+    private
+      procedure internalShowStatus;
+      procedure internalShowInfo;
+    protected
+      procedure Execute; override;
+    public
+      fStatusText : string;
+      fInfoText : string;
+      Constructor Create(CreateSuspended : boolean);
+      procedure ShowStatus;
+      procedure ShowInfo;
+    end;
+
 var
   Form1: TForm1;
   error_num:integer=0;
@@ -75,6 +92,9 @@ var
   McadProcess: TProcess;
   Timer1_Tick:integer=1; 
   GUI_flag:boolean=True; 
+
+  AmpThread : TMyThread;
+
 
   PROCEDURE ERROR(errnum,doserr:INTEGER);
   PROCEDURE INFO(i:STRING);
@@ -113,6 +133,7 @@ var
   PROCEDURE MATRIX_TOOLBOX_CONVERSION_ERROR;
   PROCEDURE RAW_POINTS_ERROR;
   PROCEDURE MATCH_IN_LET_ERROR;
+  PROCEDURE MATCH_MOD_LET_ERROR;
 
   // TProcess
   procedure Register;
@@ -127,6 +148,8 @@ default_input_ext='.in';
 default_output_ext='.out';
 default_nutmeg_ext='.nut';
 default_mcad_ext='.sci';
+default_mcad_dir='_m';
+default_raw_dir='_r';
 
 err_file=1;
 err_synt=2;
@@ -148,6 +171,7 @@ var
   ext_mcad_str:string=default_mcad_ext;
 
   CONFIG:TEXTFile;
+  
 {***************************************************************************}
 {***************************************************************************}
 {***************************************************************************}
@@ -235,6 +259,49 @@ begin
     end;
 end;
 
+{***************************************************************************}
+{***************************************************************************}
+{***************************************************************************}
+
+
+
+procedure Amp_calc; forward;
+
+  constructor TMyThread.Create(CreateSuspended : boolean);
+  begin
+    FreeOnTerminate := True;
+    inherited Create(CreateSuspended);
+  end;
+
+  procedure TMyThread.internalShowStatus;
+  // this method is executed by the mainthread and can therefore access all GUI elements.
+  begin
+    Form1.Memo2.Lines.Add(fStatusText);
+  end;
+
+  procedure TMyThread.internalShowInfo;
+  // this method is executed by the mainthread and can therefore access all GUI elements.
+  begin
+    Form1.Memo1.Lines.Add(fInfoText);
+  end;
+
+   {The Main Thread must be the only thread that updates GUI}
+  procedure TMyThread.ShowStatus;
+  begin
+    Synchronize(@self.internalShowStatus);
+  end;
+
+  {The Main Thread must be the only thread that updates GUI}
+  procedure TMyThread.ShowInfo;
+  begin
+    Synchronize(@self.internalShowInfo);
+  end;
+
+  procedure TMyThread.Execute;
+  begin
+    Amp_calc;
+  end;
+
 
 
 
@@ -245,13 +312,27 @@ end;
 
 PROCEDURE INFO(i:STRING);
 BEGIN
+
+{$IFDEF AMP_AS_THREAD}
+    AmpThread.fInfoText := i+#13;
+    AmpThread.ShowInfo;
+{$ELSE}
  Form1.Memo1.Lines.Add(i+#13);
+{$ENDIF}
+
 END;
 
 {***************************************************************************}
 PROCEDURE STATUS(s:STRING);
 BEGIN
+
+{$IFDEF AMP_AS_THREAD}
+  AmpThread.fStatusText := s+#13;
+  AmpThread.ShowStatus;
+{$ELSE}
  Form1.Memo2.Lines.Add(s+#13);
+{$ENDIF}
+
 END;
 
 {***************************************************************************}
@@ -260,6 +341,11 @@ VAR
 
 str:string;
 BEGIN
+     INFO('CLOSING:'+OUTSTR);
+     {$I-}
+     CLOSEFile(RESULTS);
+     {$I+}
+
      error_num:=errnum;
      CASE errnum OF
       1:str:='01:CONSOLE CAN NOT BE INPUT';
@@ -305,13 +391,20 @@ BEGIN
      41:str:='41:MATRIX_TOOLBOX_CONVERSION_ERROR';
      42:str:='42:RAW_POINTS_ERROR';
      43:str:='43:NO MATCHING ELEMENT FOR LET';
+     44:str:='44:NO MATCHING ELEMENT FOR MOD IN LET';
     ELSE
        str:='STRANGE ERROR NUMBER'
     END;
-        Form1.Memo1.Lines.Add(str+#13);
-    Sleep(10000);
+        
+    STATUS(str);
+    Sleep(5*Timer1_Tick);
     ExitCode := error_num;
-    Halt(error_num);
+    programstate:=3;
+    while (True) do
+    begin
+        // this is a trap - timer should terminate 
+    end;
+    
 END;
 
 
@@ -544,6 +637,11 @@ BEGIN
   ERROR(43,0)
 END;
 
+{***************************************************************************}
+PROCEDURE MATCH_MOD_LET_ERROR;
+BEGIN
+  ERROR(44,0)
+END;
 
 {***************************************************************************}
 Procedure ErrorReport;
@@ -578,6 +676,8 @@ procedure ReadConfig;
 var
    line_len,count,p:integer;
    line_str,libpath_str,spicepath_str,mcadpath_str,tick_str,gui_str:string;
+   mcaddir_str, rawdir_str:string;
+   
 label next_line;
 begin
 
@@ -698,6 +798,30 @@ begin
           goto next_line;
           end;
 
+          if(Pos('MCADDIR',line_str)<>0) then
+          begin
+               p:=pos(CHR(39),line_str);  { CHR(39)=' }
+               if (p>0) then
+               begin
+                    count:=line_len-p+1;
+                    mcaddir_str:=Trim(Copy(line_str,p,count));
+                    MCADDIRSTR:=Copy(mcaddir_str,2,Length(mcaddir_str)-2); {remove ' ' from the path}
+               end;
+          goto next_line;
+          end;
+          
+          if(Pos('RAWDIR',line_str)<>0) then
+          begin
+               p:=pos(CHR(39),line_str);  { CHR(39)=' }
+               if (p>0) then
+               begin
+                    count:=line_len-p+1;
+                    rawdir_str:=Trim(Copy(line_str,p,count));
+                    RAWDIRSTR:=Copy(rawdir_str,2,Length(rawdir_str)-2); {remove ' ' from the path}
+               end;
+          goto next_line;
+          end;
+
 next_line:
      end;
 
@@ -711,28 +835,25 @@ procedure GetConfig;
 
 begin
 {$I-}
+    ext_in_str:=def_in_str;
+    ext_out_str:=def_out_str;
+    ext_nut_str:=def_nut_str;
+    SPICESTR:='';
+    MCADDIRSTR:= default_mcad_dir;
+    RAWDIRSTR:= default_raw_dir;
     LIBPATHSTR:='';
     path_str:=ExtractFileDir(ParamStr(0));
     conf_str:=path_str+'\amp.ini';
-    ASSIGN(CONFIG,conf_str);
+    ASSIGNFile(CONFIG,conf_str);
     RESET(CONFIG);
     if IOResult<>0 then
     begin
          INFO('NO CONFIG FILE - USING DEFAULTS');
-         ext_in_str:=def_in_str;
-         ext_out_str:=def_out_str;
-         ext_nut_str:=def_nut_str;
-         SPICESTR:='';
     end
     else
     begin
          ReadConfig;
     end;
-    INFO('Config: Input *'+ext_in_str);
-    INFO('Config: Output *'+ext_out_str);
-    INFO('Config: Libpath: '+LIBPATHSTR);
-    INFO('Config: Nutmeg *'+ext_nut_str);
-    INFO('Config: Spice: ' + SPICESTR);
 
     if (ext_in_str=ext_out_str) then error_num:=err_config;
 {$I+}
@@ -746,7 +867,7 @@ begin
   if INPSTR<>'' then
   begin
 
-       ASSIGN(DATA,INPSTR);
+       ASSIGNFile(DATA,INPSTR);
        RESET(DATA);
        if IOResult<>0 then
        begin
@@ -765,7 +886,7 @@ Procedure CreateResults;
  begin
 
 
-  ASSIGN(RESULTS,OUTSTR);
+  ASSIGNFile(RESULTS,OUTSTR);
   REWRITE(RESULTS);
   {
   if IOResult<>0 then
@@ -889,14 +1010,26 @@ end;
 
 {----------------------------------------------------------}
 
+procedure Amp_calc;
+BEGIN
+   AMP;
+   if error_num=0 then
+   begin
+      if raw then Run_Nutmeg;
+      if mcad then Run_Mcad; 
+      STATUS('*** THIS IS THE END ***');
+      INFO('*** THIS IS THE END ***');
+      programstate:=4;
+   end
+END;
+
+{----------------------------------------------------------}
+
 procedure Amp_exe;
  var
   p:Integer;
 
 begin
-
-
-     
 
      if ParamCount=0 then
      begin
@@ -932,20 +1065,22 @@ begin
      begin
           CreateResults;
           Form1.Edit2.Text:=OUTSTR;
-          If error_num<>0 then  ErrorReport;
+          If error_num<>0 then
+          begin   
+           ErrorReport;
+          end; 
      end;
 
+     Form1.Update;
+     
      if error_num=0 then
      begin
-        AMP;
-        if error_num=0 then
-        begin
-          if raw then Run_Nutmeg;
-          if mcad then Run_Mcad; 
-          STATUS('*** THIS IS THE END ***');
-          INFO('*** THIS IS THE END ***');
-          programstate:=4;
-        end
+{$IFDEF AMP_AS_THREAD}        
+        AmpThread := TMyThread.Create(FALSE);
+        Form1.Memo1.Lines.Add('AMP runs as AmpThread');        
+{$ELSE}
+        Amp_calc;
+{$ENDIF}    
      end
      else
      begin
@@ -960,7 +1095,7 @@ begin
      Edit1.Text:='';
      Edit2.Text:='';
      Memo1.Clear;
-     
+     Memo2.Clear;
      Timer1.Enabled:=True;
 end;
 
@@ -970,6 +1105,7 @@ begin
     1:
     begin
          programstate:=2;
+         Form1.Memo1.Lines.Add('PWD: '+ GetCurrentDir);                        
          GetConfig;         
          if GUI_flag then begin   
             Form1.Show;
@@ -999,7 +1135,21 @@ begin
     begin
          if error_num <> 0 then
          begin
-          ExitCode := error_num;
+           Form1.Memo1.Lines.Add('Error exit - Clean up'+#13);           
+           {$I-}
+           CLOSEFile(RESULTS);
+           CLOSEFile(MCADF);
+           CLOSEFile(M0CADF);
+           CLOSEFile(LIBFILE);
+           CLOSEFile(RAWF);
+           CLOSEFile(VCADF);
+           CLOSEFile(V0CADF);
+           {$I+}
+{$IFDEF AMP_AS_THREAD}
+           // Force termination of Amp Thread
+           TerminateThread(AmpThread.ThreadId, 0);
+           Form1.Memo1.Lines.Add('AmpThread killed'+#13);
+{$ENDIF}    
           Halt(error_num);
          end;
          Application.Terminate;

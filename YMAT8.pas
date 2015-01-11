@@ -382,6 +382,7 @@ END;
             ADD_TO_MATLIST( MAT_PT, MAT_TAIL_PT);
             with (MAT_TAIL_PT^) do begin
             MAT_TAIL_PT^.line_pt:=l_ptr;
+            xx:=FALSE;
             cpt1:= FND('$','$',1);
             cpt2:= FND(' ',' ',cpt1); {skip $MAT}
             cpt1:= FND('A','z',cpt2);

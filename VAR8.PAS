@@ -21,7 +21,7 @@ VAR
  T_head,T_tail,T_temp:tptr;
  K_head,K_tail,K_temp:kptr;
  D_head,D_tail,D_temp:dptr;
- DATA,RESULTS,MCADF,M0CADF,LIBFILE,RAWF,MVALF,M0VALF:text;
+ DATA,RESULTS,MCADF,M0CADF,LIBFILE,RAWF,VCADF,V0CADF:text;
  BATCH_PT:listpt;
  INC_HEAD_PT,INC_TAIL_PT:listpt;
  FILELINES_HEAD_PT:listapt;
@@ -29,7 +29,7 @@ VAR
  LIB_FILES_PT:listapt;
  LIB_CALLS_PT:listapt;
  LIB_PT:libpt;
- LIB_COMP_PT:listapt;
+ LIB_COMP_PT, LIB_COMP_PT_TAIL:listapt;
  TASK_PT:taskpt;
  EXTRA_JOB_PT:taskpt;
  nsymb:symb;
@@ -39,11 +39,13 @@ VAR
  itg,cpt1,cpt2:INTEGER;
  xx:BOOLEAN;                                       {* cancel marker *}
  ch:CHAR;
- INPSTR,OUTSTR,GRFSTR,LIBSTR,MSTR,M0STR,INCSTR,FILELINESSTR,LIBPATHSTR,RAWSTR,SPICESTR,NUTMEGSTR,MCADEXESTR,MCADSCRIPTSTR,M0VSTR,MVSTR:string[250];
+ INPSTR,OUTSTR,GRFSTR,LIBSTR,MSTR,M0STR,INCSTR,FILELINESSTR,LIBPATHSTR,RAWSTR,SPICESTR,NUTMEGSTR,MCADEXESTR,MCADSCRIPTSTR,V0STR,VSTR:string[250];
+ MCADDIRSTR, RAWDIRSTR:string[250];
  JOB_NAME:string;
  trace,mcad:BOOLEAN;
  {D_C:BOOLEAN;}                                       {* D_C direct_current  *}
  sens:BOOLEAN;
  
 implementation
+
 END.

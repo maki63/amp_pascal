@@ -23,7 +23,6 @@ PROCEDURE ADD2CPLX_LIST(VAR head,tail:listcpt; val_re,val_im:DOUBLE);
 
 PROCEDURE ADD2COFF_LIST(VAR head,tail:drpt; reval,imval:DOUBLE);
 
-PROCEDURE ADD_LISTA(head:listapt; VAR tail:listapt);
 
 PROCEDURE CREATE_PROBES_TF_TASKS;
 
@@ -47,6 +46,9 @@ FUNCTION REAL_ELEMENT_COUNTER( rlpt:listbpt):integer;
 
 implementation
 USES Amp8_main;
+
+
+
 {***************************************************************************}
 
 PROCEDURE TRACE_DATA;
@@ -236,7 +238,7 @@ END;
   cpt2:=cpt1;
   cpt1:=FND(' ',' ',cpt2);
   cpt2:=cpt1;
-  cpt1:=FND('!','z',cpt2);
+  cpt1:=FND('!','~',cpt2);
   cpt2:=FND(' ',' ',cpt1);
   IF NOT(xx) THEN
    INCSTR:=COPY(line,cpt1,cpt2)
@@ -258,7 +260,7 @@ END;
   while not(lptr=NIL) do begin
    line:=lptr^.oneline;
    xx:=FALSE;
-   cpt1:=FND('!','z',1);
+   cpt1:=FND('!','~',1);
    cpt2:=cpt1;
    inc_flag:=FALSE;
    if not xx then begin
@@ -304,7 +306,7 @@ END;
  PROCEDURE EXTRACT_FILELINESSTR;
  BEGIN
   xx:=FALSE;
-  cpt1:=FND('!','z',cpt2);
+  cpt1:=FND('!','~',cpt2);
   cpt2:=FND(' ',' ',cpt1);
   IF NOT(xx) THEN
    FILELINESSTR:=COPY(line,cpt1,cpt2)
@@ -313,6 +315,7 @@ END;
  END;
 
 {***************************************************************************}
+{* search for $LIB and put them into LIB_FILES_PT^ list                    *}
 
  PROCEDURE EXTRACT_LIB_FILES;
  VAR
@@ -356,7 +359,7 @@ END;
  END;
 
 {***************************************************************************}
-
+{* search for X-comp  and put them into LIB_CALLS_PT^ list                 *}
  PROCEDURE EXTRACT_LIB_CALLS;
  VAR
   lptr:listpt;
@@ -456,6 +459,7 @@ END;
           tlptr^.numberMajor:=k;
           tlptr^.numberMiddle:=0;
           tlptr^.numberMinor:=0;
+          tlptr^.task_name:='NO_NAME';
           tlptr^.COMD_PT:=NIL;
           tlptr^.CDEF_PT:=NIL;
           tlptr^.COFF_PT:=NIL;
@@ -485,14 +489,22 @@ END;
                                  'i','I': ADD_CDEF(tlptr,cdefpt); {* $TRIM  *}
                                  end;
                         'f','F': ADD_COMD(tlptr,comdpt); {* $TF *}
+                        'n','N': ADD_COMD(tlptr,comdpt); {* $TN *}                         
+                        
                         end;
-               'l','L': ADD_COMD(tlptr,comdpt); {* $LET *}
+               'l','L': case line[cpt1+2] of
+                        'e','E': ADD_COMD(tlptr,comdpt); {* $LET - skip $LIB as it is already processd *}
+                        end;
                'm','M': case line[cpt1+2] of
                         'a','A': ADD_CDEF(tlptr,cdefpt); {* $MAT  *}
                         'o','O': ADD_CDEF(tlptr,cdefpt); {* $MOD  *}
                         'c','C': ADD_COMD(tlptr,comdpt); {* $MCAD *}
                         end;
-               's','S':ADD_COMD(tlptr,comdpt); {* $SENS *}
+               's','S': case line[cpt1+2] of
+                        'e','E': case line[cpt1+3] of
+                                 'n','N':   ADD_COMD(tlptr,comdpt); {* $SENS *}
+                                 end;
+                        end;                
                'h','H':ADD_COMD(tlptr,comdpt); {* $HARM *}
                'g','G':ADD_COMD(tlptr,comdpt); {* $GR, $GS*}
                'r','R': case line[cpt1+2] of
@@ -566,22 +578,6 @@ END;
    cp^.oneline:=line;
    cp^.lpt:=NIL;
   END
- END;
-
-{***************************************************************************}
-
- PROCEDURE ADD_LISTA(head:listapt; VAR tail:listapt);
- BEGIN
-   if head=NIL then begin
-    NEW(head);
-    tail:=head;
-   end
-   else begin
-    NEW(tail^.lpt);
-    tail:=tail^.lpt
-   end;
-   tail^.oneline:=line;
-   tail^.lpt:=NIL;
  END;
 
 {***************************************************************************}
@@ -1049,7 +1045,7 @@ END;
 {***************************************************************************}
 {***************************************************************************}
 {***************************************************************************}
-{ I know this is mess due to lptr (this is a TYPE!!!)
+{ I know this is mess due to lptr (lpte is is a TYPE!!!)
   READREAL but this is fix - to be solved in future }
 
  PROCEDURE PARSE_DEF(job:taskpt);
@@ -1069,33 +1065,34 @@ END;
  c:char;
  line_ptr:listapt;
  BEGIN
-   line_ptr:=lptr; { use local copy }
-   cpt1:=FND('!','~',cpt2);
-   c:=line[cpt1];
-   if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then begin
-      xx:=FALSE;
-      RRL;
-   end
-   else begin
-      if ( line_ptr^.lpt<>NIL ) then begin
+   
+   line_ptr:=lptr; {* use local copy *}
+   xx:=FALSE; 
+   RRL;
+   if xx then 
+   begin
+    if ( line_ptr^.lpt<>NIL ) then 
+    begin
         line_ptr:=lptr^.lpt;
         line:=line_ptr^.oneline;
         cpt2:=1;
+        xx:=FALSE;
         cpt1:=FND('!','~',cpt2);
-        c:=line[cpt1];
-        if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then begin
-            xx:=FALSE;
-            RRL;
-            if (not xx) then lptr:=line_ptr; { valid data found so update line}
-        end
-        else begin
-          xx:=TRUE;
-        end
-      end
-      else begin
-         xx:=TRUE;
-      end
-
+        if not xx then 
+        begin 
+            c:=line[cpt1]; {* advance to another line only if next line starts with a digit *}
+            if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then 
+            begin
+                xx:=FALSE;
+                RRL;
+                if (not xx) then lptr:=line_ptr; { valid data found so update line}
+            end
+            else
+            begin 
+                xx:=TRUE; 
+            end
+        end       
+     end
    end
  END;
 
@@ -1430,7 +1427,6 @@ PROCEDURE DEFINE_FREQ(job:taskpt);
   freq_tail_pt:listbpt;
   freq_list_pt:listbpt;
   c:char;
-
 {***************************************************************************}
 {***************************************************************************}
 
@@ -1439,36 +1435,36 @@ PROCEDURE DEFINE_FREQ(job:taskpt);
  c:char;
  line_ptr:listapt;
  BEGIN
-   line_ptr:=lptr; { use local copy }
-   cpt1:=FND('!','~',cpt2);
-   c:=line[cpt1];
-   if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then begin
-      xx:=FALSE;
-      RRL;
-   end
-   else begin
-      if ( line_ptr^.lpt<>NIL ) then begin
+   
+   line_ptr:=lptr; {* use local copy *}
+   xx:=FALSE; 
+   RRL;
+   if xx then 
+   begin
+    if ( line_ptr^.lpt<>NIL ) then 
+    begin
         line_ptr:=lptr^.lpt;
         line:=line_ptr^.oneline;
         cpt2:=1;
+        xx:=FALSE;
         cpt1:=FND('!','~',cpt2);
-        c:=line[cpt1];
-        if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then begin
-            xx:=FALSE;
-            RRL;
-            if (not xx) then lptr:=line_ptr; { valid data found so update line}
-        end
-        else begin
-          xx:=TRUE;
-        end
-      end
-      else begin
-         xx:=TRUE;
-      end
-
+        if not xx then 
+        begin 
+            c:=line[cpt1]; {* advance to another line only if next line starts with a digit *}
+            if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then 
+            begin
+                xx:=FALSE;
+                RRL;
+                if (not xx) then lptr:=line_ptr; { valid data found so update line}
+            end
+            else
+            begin 
+                xx:=TRUE; 
+            end
+        end       
+     end
    end
  END;
-
 
 
 {***************************************************************************}
@@ -1687,6 +1683,7 @@ BEGIN
               TASK_TAIL_PT^.numberMajor:=TASK_ref_pt^.numberMajor;
               TASK_TAIL_PT^.numberMiddle:=TASK_ref_pt^.numberMiddle;
               TASK_TAIL_PT^.numberMinor:=task_counter;
+              TASK_TAIL_PT^.task_name:=TASK_ref_pt^.task_name;
               task_counter:=task_counter+1;
               COMD_CHAIN_PT:=TASK_TAIL_PT^.COMD_PT;
               TASK_TAIL_PT^.COMD_PT:=NIL;
@@ -2112,43 +2109,42 @@ PROCEDURE SET_PAR_COMP(job:taskpt);
   par_cnt, ref_par_cnt:integer;
 
 {***************************************************************************}
-{***************************************************************************}
 
  PROCEDURE READREAL;
  VAR
  c:char;
  line_ptr:listapt;
  BEGIN
-   line_ptr:=lptr; { use local copy }
-   cpt1:=FND('!','~',cpt2);
-   c:=line[cpt1];
-   if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then begin
-      xx:=FALSE;
-      RRL;
-   end
-   else begin
-      if ( line_ptr^.lpt<>NIL ) then begin
+   
+   line_ptr:=lptr; {* use local copy *}
+   xx:=FALSE; 
+   RRL;
+   if xx then 
+   begin
+    if ( line_ptr^.lpt<>NIL ) then 
+    begin
         line_ptr:=lptr^.lpt;
         line:=line_ptr^.oneline;
         cpt2:=1;
+        xx:=FALSE;
         cpt1:=FND('!','~',cpt2);
-        c:=line[cpt1];
-        if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then begin
-            xx:=FALSE;
-            RRL;
-            if (not xx) then lptr:=line_ptr; { valid data found so update line}
-        end
-        else begin
-          xx:=TRUE;
-        end
-      end
-      else begin
-         xx:=TRUE;
-      end
-
+        if not xx then 
+        begin 
+            c:=line[cpt1]; {* advance to another line only if next line starts with a digit *}
+            if (ORD(c)>=ORD('+'))AND(ORD(c)<=ORD('9')) then 
+            begin
+                xx:=FALSE;
+                RRL;
+                if (not xx) then lptr:=line_ptr; { valid data found so update line}
+            end
+            else
+            begin 
+                xx:=TRUE; 
+            end
+        end       
+     end
    end
  END;
-
 
 
 {***************************************************************************}
@@ -2432,7 +2428,7 @@ PROCEDURE EXTRACT_LET_DEF(job:taskpt);
  VAR
  lptr:listapt;
  LET_TAIL_PT:letpt;
- c:char;
+ c1,c2:char;
  BEGIN
     
   job^.LET_PT:=NIL;           { fetch $LET definitions }
@@ -2444,12 +2440,17 @@ PROCEDURE EXTRACT_LET_DEF(job:taskpt);
    cpt1:=FND('!','z',1);
    cpt2:=cpt1;
    if line[cpt1]='$' then begin
-        c:=line[cpt1+1];
-        case c of
+        c1:=line[cpt1+1];
+        case c1 of
         'l','L': begin
-                  ADD_LET(job,job^.LET_PT,LET_TAIL_PT);   { $LET   }
-                  LET_TAIL_PT^.line_pt:=lptr; { a reference to this line - only one line }
-                 end;
+                  c2:=line[cpt1+2];  
+                  case c2 of
+                  'e','E': begin   
+                            ADD_LET(job,job^.LET_PT,LET_TAIL_PT);   { $LET   }
+                            LET_TAIL_PT^.line_pt:=lptr; { a reference to this line - only one line }
+                           end
+                  end          
+                 end
         end;
    end;
    lptr:=lptr^.lpt;
@@ -2537,6 +2538,8 @@ BEGIN
 
 END;
 
+
+
 {***************************************************************************}
 FUNCTION LET_MATCH_R (let_pt:letpt): rptr;
 VAR
@@ -2546,8 +2549,26 @@ BEGIN
   r_ptr:=R_head;
   while r_ptr<>NIL do
   begin
-    if ( r_ptr^.rname = let_pt^.letname) AND (r_ptr^.rvar = CONSTANT) then begin
+    if ( r_ptr^.rname = let_pt^.letname) then begin
         r_ptr^.rv := let_pt^.vre;
+        Result:=r_ptr;
+        Break;
+    end;
+    r_ptr:=r_ptr^.rnext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION MATCH_R (name:symb): rptr;
+VAR
+  r_ptr:rptr;
+BEGIN  
+  Result:=NIL;
+  r_ptr:=R_head;
+  while r_ptr<>NIL do
+  begin
+    if ( r_ptr^.rname = name) then begin
         Result:=r_ptr;
         Break;
     end;
@@ -2565,8 +2586,26 @@ BEGIN
   c_ptr:=C_head;
   while c_ptr<>NIL do
   begin
-    if ( c_ptr^.cname = let_pt^.letname) AND (c_ptr^.cvar = CONSTANT) then begin
+    if ( c_ptr^.cname = let_pt^.letname) then begin
         c_ptr^.cv := let_pt^.vre;
+        Result:=c_ptr;
+        Break;
+    end;
+    c_ptr:=c_ptr^.cnext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION MATCH_C (name:symb): cptr;
+VAR
+  c_ptr:cptr;
+BEGIN  
+  Result:=NIL;
+  c_ptr:=C_head;
+  while c_ptr<>NIL do
+  begin
+    if ( c_ptr^.cname = name) then begin
         Result:=c_ptr;
         Break;
     end;
@@ -2584,8 +2623,26 @@ BEGIN
   l_ptr:=L_head;
   while l_ptr<>NIL do
   begin
-    if ( l_ptr^.lname = let_pt^.letname) AND (l_ptr^.lvar = CONSTANT) then begin
+    if ( l_ptr^.lname = let_pt^.letname) then begin
         l_ptr^.lv := let_pt^.vre;
+        Result:=l_ptr;
+        Break;
+    end;
+    l_ptr:=l_ptr^.lnext;
+  end;
+
+END;
+
+{***************************************************************************}
+FUNCTION MATCH_L (name:symb): lptr;
+VAR
+  l_ptr:lptr;
+BEGIN  
+  Result:=NIL;
+  l_ptr:=L_head;
+  while l_ptr<>NIL do
+  begin
+    if ( l_ptr^.lname = name) then begin
         Result:=l_ptr;
         Break;
     end;
@@ -2606,6 +2663,8 @@ PROCEDURE MATCH_LET_LIST(job:taskpt);
  c_ptr:cptr;
  l_ptr:lptr;
 
+ Lp,Cp,Rp,Fr,Qr:double;
+ 
  c:char;
  BEGIN
 
@@ -2638,18 +2697,67 @@ PROCEDURE MATCH_LET_LIST(job:taskpt);
             if  r_ptr = NIL then begin
                 MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
             end;
+            if r_ptr^.rvar = MODEL_DEF then begin
+               c_ptr := MATCH_C('cp.'+ r_ptr^.rname);
+               if  c_ptr = NIL then begin
+                    MATCH_MOD_LET_ERROR; {'44:NO MATCHING ELEMENT FOR MOD IN LET'}
+               end;
+               l_ptr := MATCH_L('lp.'+ r_ptr^.rname);
+               if  l_ptr = NIL then begin
+                    MATCH_MOD_LET_ERROR; {'44:NO MATCHING ELEMENT FOR MOD IN LET'}
+               end;
+               Fr:= r_ptr^.mod_fr;
+               Qr:= r_ptr^.mod_qr;
+               Lp:=(r_ptr^.rv)*Qr/(2*pi*Fr);
+               Cp:=1/(Lp*(2*pi*Fr)*(2*pi*Fr));
+               c_ptr^.cv := Cp;
+               l_ptr^.lv := Lp; 
+            end
         end;
         'c','C': begin        
             c_ptr := LET_MATCH_C(let_ptr);
             if  c_ptr = NIL then begin
                 MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
             end;
+            if c_ptr^.cvar = MODEL_DEF then begin
+               r_ptr := MATCH_R('rp.'+ c_ptr^.cname);
+               if  r_ptr = NIL then begin
+                    MATCH_MOD_LET_ERROR; {'44:NO MATCHING ELEMENT FOR MOD IN LET'}
+               end;
+               l_ptr := MATCH_L('lp.'+ c_ptr^.cname);
+               if  l_ptr = NIL then begin
+                    MATCH_MOD_LET_ERROR; {'44:NO MATCHING ELEMENT FOR MOD IN LET'}
+               end;
+               Fr:= c_ptr^.mod_fr;
+               Qr:= c_ptr^.mod_qr;
+               Lp:=1/((c_ptr^.cv)*(2*pi*Fr)*(2*pi*Fr));
+               Rp:=(2*pi*Fr)*Lp/Qr;
+               r_ptr^.rv := Rp;
+               l_ptr^.lv := Lp; 
+            end
         end;
         'l','L': begin        
             l_ptr := LET_MATCH_L(let_ptr);
             if  l_ptr = NIL then begin
                 MATCH_IN_LET_ERROR; {'43:NO MATCHING ELEMENT FOR LET'}
             end;
+            if l_ptr^.lvar = MODEL_DEF then begin
+               r_ptr := MATCH_R('rp.'+ l_ptr^.lname);
+               if  r_ptr = NIL then begin
+                    MATCH_MOD_LET_ERROR; {'44:NO MATCHING ELEMENT FOR MOD IN LET'}
+               end;
+               c_ptr := MATCH_C('cp.'+ l_ptr^.lname);
+               if  l_ptr = NIL then begin
+                    MATCH_MOD_LET_ERROR; {'44:NO MATCHING ELEMENT FOR MOD IN LET'}
+               end;
+               Fr:= l_ptr^.mod_fr;
+               Qr:= l_ptr^.mod_qr;
+               Rp:=(2*pi*Fr)*(l_ptr^.lv)/Qr;
+               Cp:=1/((l_ptr^.lv)*(2*pi*Fr)*(2*pi*Fr));               
+               r_ptr^.rv := Rp;
+               c_ptr^.cv := Cp; 
+            end
+
         end;
         
       end; 

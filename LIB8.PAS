@@ -6,18 +6,41 @@ USES
  SysUtils,
  TYPE8,VAR8,LINE8,DATAIO8;
 
- PROCEDURE ADD_NEW_DEF(VAR pt:libpt);
- PROCEDURE EXTRACT_LIBSTR;
- PROCEDURE CREATE_LIB_DEF;
- PROCEDURE DEF_PARAM(VAR d:DEVICE);
- PROCEDURE DEF_NODES(VAR d:DEVICE);
- PROCEDURE SET_UP_LIB_DEF;
- PROCEDURE PREPARE_LIB_CALLS;
- PROCEDURE SET_UP_LIB_CALLS;
- PROCEDURE EXTRACT_LIB_COMP;
-
+ PROCEDURE CREATE_LIB_COMPONENTS;
+ 
 implementation
 USES Amp8_main;
+
+{***************************************************************************}
+
+ PROCEDURE ADD_LISTA(VAR head:listapt; VAR tail:listapt);
+ BEGIN
+   if head=NIL then begin
+    NEW(head);
+    tail:=head;
+   end
+   else begin
+    NEW(tail^.lpt);
+    tail:=tail^.lpt
+   end;
+   tail^.oneline:=line;
+   tail^.lpt:=NIL;
+ END;
+
+
+ {***************************************************************************}
+  FUNCTION ORIGINAL_NAME(name_str:string):string;
+  VAR
+    p:integer;
+  BEGIN  
+   
+   p:=pos('.',name_str);
+   if (p>1) then
+   begin
+    name_str:=Copy(name_str,1,p-1); { p=2 copy from 1 to 1}
+   end;
+   ORIGINAL_NAME := name_str;
+  END;
 
 {***************************************************************************}
 
@@ -57,17 +80,22 @@ USES Amp8_main;
   cpt2:=cpt1;
   cpt1:=FND(' ',' ',cpt2);
   cpt2:=cpt1;
-  cpt1:=FND('!','z',cpt2);
-  cpt2:=FND(' ',' ',cpt1);
-  IF NOT(xx) THEN
-   LIBSTR:=COPY(line,cpt1,cpt2)
-  ELSE
+  cpt1:=FND('!','~',cpt2);
+  if NOT(xx) then
+  begin
+   LIBSTR :=  COPY(line, cpt1,LENGTH(line));    
+   LIBSTR := Trim(LIBSTR)
+  end
+  else
+  begin
    LIBSTR:='NUL'
+  end 
  END;
 
 
 
 {***************************************************************************}
+{* open files in LIB_FILES_PT^ list and create DEVICE DEFINITIONS in LIB_PT^ list   *}
 
  PROCEDURE CREATE_LIB_DEF;
  VAR
@@ -102,7 +130,7 @@ USES Amp8_main;
  END;
 
 {***************************************************************************}
-
+{* create list d.ppth^ of parameters for DEVICE d  *}
  PROCEDURE DEF_PARAM(VAR d:DEVICE);
  VAR
  pointer:listapt;
@@ -166,7 +194,7 @@ BEGIN
 END;
 
 {***************************************************************************}
-
+{* find number of internal nodes d.nodes for a DEVICE d  *}
  PROCEDURE DEF_NODES(VAR d:DEVICE);
  VAR
  pointer:listapt;
@@ -205,7 +233,7 @@ END;
    xx:=FALSE;
    cpt1:=FND('!','z',1);
    cpt2:=FND(' ',' ',cpt1);
-   IF IS_COMP_NAME(line[cpt1]) THEN
+   IF IS_COMP_NAME(line[cpt1]) or (line[cpt1]='x') or (line[cpt1]='X') THEN
    BEGIN
     CASE line[cpt1] OF
      'r','R','y','Y','c','C','l','L','z','Z':
@@ -216,13 +244,13 @@ END;
            temp:=FIND_MAX_OF(4);
      't','T':
            temp:=FIND_MAX_OF(3);
-     'b','B': begin
+     'b','B','x','X': begin
                 temp_cpt1:=cpt1;
                 temp_cpt2:=cpt2;
                 p_cnt:=COUNT_PARAMETERS;
                 cpt1:=temp_cpt1;
                 cpt2:=temp_cpt2;
-                temp:=FIND_MAX_OF(p_cnt-1); {last one parameter in B is a matrix name}
+                temp:=FIND_MAX_OF(p_cnt-1); {last parameter in B,X is a name}
               end;
      ELSE
      BEGIN
@@ -236,7 +264,7 @@ END;
  END;
 
 {***************************************************************************}
-
+{* create list of parameters and find number of internal nodes for all DEVICE definitions in LIB_PT^ list *}
  PROCEDURE SET_UP_LIB_DEF;
  VAR
   pointer:libpt;
@@ -246,8 +274,8 @@ END;
   pointer:=LIB_PT;
   WHILE pointer<>NIL DO
   BEGIN
-   DEF_PARAM(pointer^.def);
-   DEF_NODES(pointer^.def);
+   DEF_PARAM(pointer^.def);  {* create list d.ppth^ of parameters for DEVICE d  *}
+   DEF_NODES(pointer^.def);  {* find number of internal nodes d.nodes for a DEVICE d  *}
    pointer:=pointer^.defpt
   END
  END;
@@ -280,6 +308,7 @@ END;
 
  END;
 
+{***************************************************************************}
  PROCEDURE COPY_PAR( source:devicept; VAR dest:devicept);
  VAR
   srcpt,destpt:parameterpt;
@@ -308,7 +337,7 @@ END;
  END;
 
 
-
+{***************************************************************************}
  PROCEDURE SET_DEV_PAR( VAR dest:devicept);
  VAR
   destpt:parameterpt;
@@ -328,75 +357,8 @@ END;
 
  END;
 
-
- PROCEDURE PREPARE_LIB_CALLS;
- VAR
-  devname,partname:symb;
-  pointera:listapt;
-  pointer,defpointer:libpt;
-  devpointer,defpt:devicept;
-  temp_cpt1,temp_cpt2:integer;
- BEGIN
-
-  pointera:=LIB_CALLS_PT;
-  WHILE pointera<>NIL DO
-  BEGIN
-   line:=pointera^.oneline;
-   xx:=FALSE;
-   cpt1:=FND('!','z',1);
-   cpt2:=cpt1;
-   IF (line[cpt1]='x') or (line[cpt1]='X') THEN
-   BEGIN
-    cpt2:=FND(' ',' ',cpt1);
-    {IF (cpt1+1>=cpt2-1) THEN nsymb:=''
-    ELSE TXT(cpt1+1,cpt2-1);}
-    TXT(cpt1,cpt2-1);
-    partname:=nsymb;
-    temp_cpt1:=cpt1;
-    temp_cpt2:=cpt2;
-    cpt1:=FND('A','z',cpt2); { skip nodes }
-    cpt2:=FND(' ',' ',cpt1);
-    TXT(cpt1,cpt2-1);
-    devname:=nsymb;
-    pointer:=LIB_PT;
-    defpointer:=NIL;
-    WHILE (pointer<>NIL) AND (defpointer=NIL) DO
-    BEGIN
-     IF (devname=pointer^.def.devname) THEN defpointer:=pointer;
-     pointer:=pointer^.defpt
-    END;
-
-    IF defpointer=NIL THEN
-    BEGIN
-     STATUS(line);
-     ERROR(7,0)  { LIBRARY ERROR-DEF FOR CALL NOT FOUND }
-    END
-    ELSE
-    BEGIN
-     cpt1 := temp_cpt1;
-     cpt2 := temp_cpt2;
-     defpt:=ADDR(defpointer^.def);
-     devpointer:=ADDR(defpointer^.def);
-     WHILE devpointer^.devpt<>NIL DO
-      devpointer:=devpointer^.devpt;
-     NEW(devpointer^.devpt);
-     devpointer:=devpointer^.devpt;
-     devpointer^.devpt:=NIL;
-     devpointer^.devname:=partname;
-     devpointer^.nodes:=defpointer^.def.nodes;
-     devpointer^.llpth:=NIL;
-     devpointer^.ppth:=NIL;
-     COPY_DEF(defpt,devpointer);
-     COPY_PAR(defpt,devpointer);
-     SET_DEV_PAR(devpointer);
-    END
-   END;
-   pointera:=pointera^.lpt
-  END
- END;
-
+ 
 {***************************************************************************}
-
  PROCEDURE CHANGE_INT_NODES(VAR dev:devicept);
  VAR
 
@@ -467,7 +429,7 @@ END;
      cpt1:=cpt2;
      NODE(3)
     END;
-    'b','B':
+    'b','B','x','X':
     BEGIN
      temp_cpt1:=cpt1;
      temp_cpt2:=cpt2;
@@ -475,7 +437,7 @@ END;
      cpt1:=temp_cpt1;
      cpt2:=temp_cpt2;
      cpt1:=cpt2;
-     NODE(p_cnt-1); {last parameter in B is a matrix name}
+     NODE(p_cnt-1); {last parameter in B,X is a name}
     END;
     'g','G','e','E','f','F','h','H','n','N':
     BEGIN
@@ -492,6 +454,7 @@ END;
   END
  END;
 
+{***************************************************************************}
 
  PROCEDURE CHANGE_DEV_PARAMETERS(VAR dev:devicept);
  VAR
@@ -584,7 +547,7 @@ END;
      cpt1:=cpt2;
      PARAMETERS(3,dev^.ppth)
     END;
-    'b','B':
+    'b','B','x','X':
     BEGIN
      temp_cpt1:=cpt1;
      temp_cpt2:=cpt2;
@@ -592,7 +555,7 @@ END;
      cpt1:=temp_cpt1;
      cpt2:=temp_cpt2;
      cpt1:=cpt2;
-     PARAMETERS(p_cnt-1,dev^.ppth); {last parameter in B is a matrix name}
+     PARAMETERS(p_cnt-1,dev^.ppth); {last parameter in B,X is a name}
     END
 
     ELSE
@@ -604,82 +567,131 @@ END;
    pointer:=pointer^.lpt
   END
  END;
+ 
 
+{************************************************************************************}
+{* find matching device definition in LIB_PT^                                       *}
+{* then copy a definition and parameters to the newly created device in DEVICE list *}                     
+{* then from a call line read and assign values of node-parameters to the newly created device      *}
+{* set nodes-parameters and internal nodes in device instance - update nn for each instance         *}
+{* copy components lines to LIB_COMP_PT^  *} 
+{* in case of X-model in X-model call EXPAND_LIB_MACRO recursively *} 
+{************************************************************************************}
 
- PROCEDURE SET_UP_LIB_CALLS;
+ PROCEDURE EXPAND_LIB_MACRO;
  VAR
-  libpointer:libpt;
-  devpointer:devicept;
+  devname,partname,origin:symb;
 
- BEGIN
-
-  libpointer:=LIB_PT;
-  WHILE libpointer<>NIL DO
-  BEGIN
-   devpointer:=libpointer^.def.devpt;
-   WHILE devpointer<>NIL DO
-   BEGIN
-    CHANGE_INT_NODES(devpointer);
-    nn:=nn+devpointer^.nodes;
-    CHANGE_DEV_PARAMETERS(devpointer);
-    devpointer:=devpointer^.devpt
-   END;
-   libpointer:=libpointer^.defpt
-  END
- END;
-
-{***************************************************************************}
-
- PROCEDURE EXTRACT_LIB_COMP;
- VAR
-  libpointer:libpt;
-  devpointer:devicept;
-  linepointer,compointer:listapt;
+  pointer,defpointer:libpt;
+  devpointer,defpt:devicept;
+  temp_cpt1,temp_cpt2:integer;
+  
+  linepointer:listapt;
   extension:symb;
 
  BEGIN
 
-  libpointer:=LIB_PT;
-  WHILE libpointer<>NIL DO
-  BEGIN
-   devpointer:=libpointer^.def.devpt;
-   WHILE devpointer<>NIL DO
+   xx:=FALSE;
+   cpt1:=FND('!','z',1);
+   cpt2:=cpt1;
+   IF (line[cpt1]='x') or (line[cpt1]='X') THEN
    BEGIN
-    extension:=CONCAT('.',devpointer^.devname);
-    linepointer:=devpointer^.llpth;
-    WHILE linepointer<>NIL DO
+    cpt2:=FND(' ',' ',cpt1);
+    TXT(cpt1,cpt2-1);
+    partname:=nsymb;
+    temp_cpt1:=cpt1;
+    temp_cpt2:=cpt2;
+    cpt1:=FND('A','z',cpt2); { skip nodes }
+    cpt2:=FND(' ',' ',cpt1);
+    TXT(cpt1,cpt2-1);
+    devname:=nsymb;    
+    origin := ORIGINAL_NAME(devname); { create a base name XB for hierarchical macros XB.XA in recursive calls }
+    pointer:=LIB_PT;
+    defpointer:=NIL;
+    WHILE (pointer<>NIL) AND (defpointer=NIL) DO
     BEGIN
-     line:=linepointer^.oneline;
-     xx:=FALSE;
-     cpt1:=FND('!','z',1);
-     cpt2:=FND(' ',' ',cpt1);
-     IF IS_COMP_NAME(line[cpt1]) THEN
-     BEGIN
-      INSERT(extension,line,cpt2);
-      IF LIB_COMP_PT=NIL THEN
-      BEGIN
-       NEW(LIB_COMP_PT);
-       compointer:=LIB_COMP_PT;
-      END
-      ELSE
-      BEGIN
-       NEW(compointer^.lpt);
-       compointer:=compointer^.lpt
-      END;
-      compointer^.oneline:=line;
-      compointer^.lpt:=NIL
-     END;
-     linepointer:=linepointer^.lpt
+     IF (origin = pointer^.def.devname) THEN defpointer:=pointer;
+     pointer:=pointer^.defpt
     END;
-    devpointer:=devpointer^.devpt
-   END;
-   libpointer:=libpointer^.defpt
-  END
 
+    IF defpointer=NIL THEN
+    BEGIN
+     STATUS(line);
+     ERROR(7,0)  { LIBRARY ERROR-DEF FOR CALL NOT FOUND }
+    END
+    ELSE
+    BEGIN
+     cpt1 := temp_cpt1;
+     cpt2 := temp_cpt2;
+     defpt:=ADDR(defpointer^.def);
+     devpointer:=ADDR(defpointer^.def);
+     WHILE devpointer^.devpt<>NIL DO
+      devpointer:=devpointer^.devpt;
+     NEW(devpointer^.devpt);
+     devpointer:=devpointer^.devpt;
+     devpointer^.devpt:=NIL;
+     devpointer^.devname:=partname;
+     devpointer^.nodes:=defpointer^.def.nodes;
+     devpointer^.llpth:=NIL;
+     devpointer^.ppth:=NIL;
+     
+     COPY_DEF(defpt,devpointer);
+     COPY_PAR(defpt,devpointer);
+     SET_DEV_PAR(devpointer);
+     CHANGE_INT_NODES(devpointer);
+     nn:=nn+devpointer^.nodes;
+     CHANGE_DEV_PARAMETERS(devpointer);
+     
+     extension:=CONCAT('.',devpointer^.devname);     
+     linepointer:=devpointer^.llpth;
+     WHILE linepointer<>NIL DO
+     BEGIN
+        line:=linepointer^.oneline;
+        xx:=FALSE;
+        cpt1:=FND('!','z',1);
+        cpt2:=FND(' ',' ',cpt1);
+        if IS_COMP_NAME(line[cpt1]) then
+        begin
+            INSERT(extension,line,cpt2);
+            ADD_LISTA(LIB_COMP_PT, LIB_COMP_PT_TAIL);
+        end
+        else
+        begin
+            if (line[cpt1]='x') or (line[cpt1]='X') then
+            begin
+            INSERT(extension,line,cpt2);  // Xinternal.Xexternal
+            EXPAND_LIB_MACRO ; // this is a recurence call for XB inside XA  i.e XB.XA...
+         end;
+        end;     
+        linepointer:=linepointer^.lpt
+     END;
+    
+
+    END // defpointer=NIL
+   END;
  END;
 
+{************************************************************************************}
+{************************************************************************************}
+{************************************************************************************}
 
+PROCEDURE CREATE_LIB_COMPONENTS;
+ VAR
+   x_line_ptr:listapt;
+ BEGIN
+ 
+  CREATE_LIB_DEF;     {* open files in LIB_FILES_PT^ list and create DEVICE DEFINITIONS in LIB_PT^ list   *} 
+  SET_UP_LIB_DEF;     {* create list of parameters and find number of internal nodes for all DEVICE definitions in LIB_PT^ list *}   
 
+  x_line_ptr:=LIB_CALLS_PT; {* for each line from LIB_CALLS_PT^ list                      *}
+  while x_line_ptr<>NIL do
+  begin
+   line:=x_line_ptr^.oneline;       
+   EXPAND_LIB_MACRO;        {* expand macro recursively *}
+   x_line_ptr:=x_line_ptr^.lpt;
+   end;
+ 
+ END;
 
 
 END.

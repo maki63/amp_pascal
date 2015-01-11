@@ -126,11 +126,9 @@ D_TYPE=RECORD
         dnext:dptr
        END;
 
-{ MODEL_DEF - defined by model }
-{ MODEL_DRV - derived but not set }
-{ MODEL_SET - value is set }
+{ MODEL_DEF - primary component defined by $MOD }
 
-VAR_TYPE=(CONSTANT, VARIABLE, TUNED, GEN, MODEL_DEF, MODEL_DRV, PARAM );
+VAR_TYPE=(CONSTANT, VARIABLE, TUNED, GEN, MODEL_DEF, PARAM );
 G_TYPE  =(GENUINE, MODEL_PAR, MODEL_ID);
 
 
@@ -190,6 +188,8 @@ RRECTYPE= RECORD
         rtunpt:tunpt;
         rvarpt:varpt;
         rparpt:parpt;
+        mod_fr:double;                { MOD: resonance freq }
+        mod_qr:double;                 { MOD: quality factor }
         rnext:rptr
        END;
 
@@ -204,6 +204,8 @@ CRECTYPE= RECORD
         ctunpt:tunpt;
         cvarpt:varpt;
         cparpt:parpt;
+        mod_fr:double;                { MOD: resonance freq }
+        mod_qr:double;                 { MOD: quality factor }
         cnext:cptr
        END;
 
@@ -218,6 +220,8 @@ LRECTYPE= RECORD
         ltunpt:tunpt;
         lvarpt:varpt;
         lparpt:parpt;
+        mod_fr:double;                { MOD: resonance freq }
+        mod_qr:double;                 { MOD: quality factor }
         lnext:lptr
        END;
 
@@ -409,6 +413,7 @@ TASK=RECORD
       numberMajor:INTEGER;      // assigned in EXTRACT_TASKS 
       numberMiddle:INTEGER;     // changed by SET_PAR_COMP and 
       numberMinor:INTEGER;      // assigned in CREATE_PROBES_TF_TASKS
+      task_name:string;
       tpt:taskpt;
     END;
 
@@ -466,7 +471,8 @@ raw_file_type = RECORD
         point_list_pt:raw_point_list_pt_type;
         numberMajor:INTEGER;    // all jobs with numberMajor 
         numberMiddle:INTEGER;   // and numberMiddle go to the same file
-        para_descr:string[250];
+        task_name:string;
+        para_descr:string;
         next_raw_file_pt:raw_file_pt_type;
     END;
 

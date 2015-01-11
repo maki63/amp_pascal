@@ -50,14 +50,14 @@ VAR
  eYn_PT:drpt;            {* Results of SCONV analysis                     *}
  
  mcadfilenum:INTEGER;    {* MCAD *mXX file extension number                    *}
- mcaddirfile:BOOLEAN;
+ mcaddirfile_flag:BOOLEAN;
 
  mcad_numberMajor:INTEGER;      {* trace task major - change should result in new values listing *}
  mcad_numberMiddle:INTEGER;     {* trace task middle - change should result in new values listing *}
 
  mcad_values_flag:BOOLEAN;
- mvalfilenum:INTEGER;    {* MCAD VALUES *mvXX file extension number    *}
- mvaldirfile:BOOLEAN;
+ valfilenum:INTEGER;    {* MCAD VALUES *mvXX file extension number    *}
+ valdirfile_flag:BOOLEAN;
 
  probes_flag:BOOLEAN;
  PROBES_TF_PT:listapt;

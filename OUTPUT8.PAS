@@ -33,7 +33,7 @@ USES Amp8_main;
  BEGIN
   INFO('WRITING RESULTS');
   WRITELN(RESULTS,asterix,version,asterix);
-  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor, ' ', job^.task_name);
 
   d_ptr:=job^.COFF_PT;
   WHILE d_ptr<>NIL DO
@@ -133,10 +133,10 @@ BEGIN
 
 
  if (job^.PAR_PT = nil) then begin
-  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor , ' ', job^.task_name);
  end
  else begin
-  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor,'  FOR PAR:');
+  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor , ' ', job^.task_name,'  FOR PAR:');
   LIST_PAR_COMP(job);
  end;
 
@@ -310,8 +310,7 @@ VAR
 
   INFO('WRITING RESULTS OF RCONV ANALYSIS');
   WRITELN(RESULTS,asterix,version,asterix);
-  WRITELN(RESULTS,'TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
-  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+  WRITELN(RESULTS,'TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor, ' ', job^.task_name);
   WRITELN(RESULTS,'SOLUTION IS PROBABLE - ',probable);
   fpt:=job^.FREQ_PT;
   spt:=YxYn_PT;
@@ -770,8 +769,7 @@ VAR
 
   INFO('WRITING RESULTS OF SCONV ANALYSIS');
   WRITELN(RESULTS,asterix,version,asterix);
-  WRITELN(RESULTS,'TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
-  WRITELN(RESULTS,'RESULTS OF TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor);
+  WRITELN(RESULTS,'TASK:',job^.numberMajor,'.',job^.numberMiddle,'.',job^.numberMinor, ' ', job^.task_name);
   WRITELN(RESULTS,'SOLUTION IS PROBABLE - ',probable);
   fpt:=job^.FREQ_PT;
   spt:=eYN_PT;

@@ -32,6 +32,8 @@ PROCEDURE LIB_CLOSE;
 PROCEDURE READ_LINE(VAR f:text);
 PROCEDURE READ_DATA_LINE;
 PROCEDURE READ_BATCH;
+PROCEDURE EXPAND_SEPARATED_COMMANDS;
+
 PROCEDURE READ_LISTA(VAR f:TEXT;VAR head:listapt);
 PROCEDURE LIST_BATCH;
 PROCEDURE LIST_LISTA(head:listapt);
@@ -67,15 +69,12 @@ USES Amp8_main;
  BEGIN
   INFO('READING DATA :'+INPSTR);
  {$I-}
-  ASSIGN(DATA,INPSTR);
+  ASSIGNFile(DATA,INPSTR);
   RESET(DATA);
  {$I+}
   err:=IOresult;
   IF err<>0 THEN
   BEGIN
-   ASSIGN(DATA,'NUL');
-   RESET(DATA);
-   INPSTR:='NUL';
    ERROR(2,err);
   END
  END;
@@ -95,9 +94,6 @@ USES Amp8_main;
   BEGIN
    ERROR(5,err);
   END;
-   ASSIGN(DATA,'NUL');
-   RESET(DATA);
-   INPSTR:='NUL';
  END;
 
 {***************************************************************************}
@@ -108,15 +104,12 @@ USES Amp8_main;
  BEGIN
   INFO('READING DATA :'+INCSTR);
  {$I-}
-  ASSIGN(DATA,INCSTR);
+  ASSIGNFile(DATA,INCSTR);
   RESET(DATA);
  {$I+}
   err:=IOresult;
   IF err<>0 THEN
   BEGIN
-   ASSIGN(DATA,'NUL');
-   RESET(DATA);
-   INCSTR:='NUL';
    ERROR(2,err);
   END
  END;
@@ -136,9 +129,6 @@ USES Amp8_main;
   BEGIN
    ERROR(5,err);
   END;
-   ASSIGN(DATA,'NUL');
-   RESET(DATA);
-   INCSTR:='NUL';
  END;
 
 {***************************************************************************}
@@ -179,14 +169,12 @@ USES Amp8_main;
  BEGIN
   INFO('READING DATA :'+FILELINESSTR);
  {$I-}
-  ASSIGN(DATA,FILELINESSTR);
+  ASSIGNFile(DATA,FILELINESSTR);
   RESET(DATA);
  {$I+}
   err:=IOresult;
   IF err<>0 THEN
   BEGIN
-   ASSIGN(DATA,'NUL');
-   RESET(DATA);
    FILELINESSTR:='NUL';
    ERROR(2,err);
   END
@@ -207,8 +195,6 @@ USES Amp8_main;
   BEGIN
    ERROR(5,err);
   END;
-   ASSIGN(DATA,'NUL');
-   RESET(DATA);
    FILELINESSTR:='NUL';
  END;
 
@@ -260,14 +246,12 @@ USES Amp8_main;
  err:INTEGER;
  BEGIN
   {$I-}
-  ASSIGN(RESULTS,OUTSTR);
+  ASSIGNFile(RESULTS,OUTSTR);
   REWRITE(RESULTS);
   {$I+}
   err:=IOResult;
   IF err<>0 THEN
   BEGIN
-   ASSIGN(RESULTS,'NUL');
-   REWRITE(RESULTS);
    ERROR(4,err)
   END
  END;
@@ -287,9 +271,6 @@ USES Amp8_main;
   BEGIN
    ERROR(6,err);
   END;
-  ASSIGN(RESULTS,'NUL');
-  REWRITE(RESULTS);
-  // OUTSTR:='NUL'
  END;
 
 {***************************************************************************}
@@ -308,14 +289,12 @@ USES Amp8_main;
    ERROR(6,err);
   END;
   {$I-}
-  ASSIGN(RESULTS,OUTSTR);
+  ASSIGNFile(RESULTS,OUTSTR);
   APPEND(RESULTS);
   {$I+}
   err:=IOResult;
   IF err<>0 THEN
   BEGIN
-   ASSIGN(RESULTS,'NUL');
-   REWRITE(RESULTS);
    ERROR(4,err)
   END
 
@@ -348,7 +327,7 @@ USES Amp8_main;
  BEGIN
   INFO('OPENING:'+LIBSTR);
   {$I-}
-  ASSIGN(LIBFILE,LIBSTR);
+  ASSIGNFile(LIBFILE,LIBSTR);
   RESET(LIBFILE);
 
   if (IOResult<>0) then begin
@@ -357,24 +336,17 @@ USES Amp8_main;
       INFO('TRYING PATH:'+LIBPATHSTR);
       LIBSTR:=LIBPATHSTR+'\'+LIBSTR;
       INFO('OPENING:'+LIBSTR);
-      ASSIGN(LIBFILE,LIBSTR);
+      ASSIGNFile(LIBFILE,LIBSTR);
       RESET(LIBFILE);
       if (IOResult<>0) then begin
         INFO('FAIL OPENING:'+LIBSTR);
-        ASSIGN(LIBFILE,'NUL');
-        RESET(LIBFILE);
-        LIBSTR:='NUL';
         ERROR(2,err);
       end
     end
     else begin
       INFO('FAIL OPENING:'+LIBSTR);
       INFO('NO LIBPATH:'+LIBPATHSTR);
-      ASSIGN(LIBFILE,'NUL');
-      RESET(LIBFILE);
-      LIBSTR:='NUL';
       ERROR(2,err);
-
     end
   end
   {$I+}
@@ -389,18 +361,12 @@ USES Amp8_main;
   INFO('CLOSING FILE:'+LIBSTR);
   {$I-}
   CLOSEFile (LIBFILE);
-  {$I+}
-  ASSIGN(LIBFILE,'NUL');
-  RESET(LIBFILE);
-  LIBSTR:='NUL';
-  {$I+}
   err:=IOResult;
+  {$I+}
+  LIBSTR:='NUL';
   IF err<>0 THEN
   BEGIN
-   ERROR(2,err);
-   ASSIGN(LIBFILE,'NUL');
-   RESET(LIBFILE);
-   LIBSTR:='NUL';
+   ERROR(5,err);
   END
  END;
 
@@ -450,6 +416,84 @@ USES Amp8_main;
    listptr^.lptt:=NIL;
   END
 
+ END;
+
+{***************************************************************************}
+
+ PROCEDURE EXPAND_SEPARATED_COMMANDS;
+ VAR
+  listptr:listpt;
+  tail_ptr:listpt;
+  cmdstr1, cmdstr2: string;
+  len:integer;
+ BEGIN
+
+  INFO('EXPAND_SEPARATED_COMMANDS');
+  listptr:=BATCH_PT;
+  while listptr<>NIL do
+  begin
+
+    line:=listptr^.oneline;
+    len:=length(line);
+
+    xx:=false;
+
+    cpt1:=FND('!','z',1);
+    cpt2:=cpt1;
+    if NOT xx then
+    begin
+      if (line[cpt1]='$') then
+      begin
+        cpt2:=FND(';',';',cpt1);
+        if NOT xx then
+        begin
+            {* there are commands and separator *}
+            {* new lines break exisiting links, this links have to be restored later *}
+            tail_ptr := listptr^.lptt;
+            listptr^.lptt:=NIL;
+            
+            while not xx do 
+            begin 
+                {* split into two parts - second may contain next commas - next loop to process them*}
+                cmdstr1 := COPY(line,cpt1,(cpt2-cpt1));
+                {* cpt2 points to ',' find next character*}
+                cpt2:=FND('!','z',cpt2+1);
+                if cpt2 < len then
+                begin   
+                    cmdstr2 := COPY(line,cpt2,len);
+                end
+                else 
+                begin
+                    cmdstr2:=' ';
+                end;
+                listptr^.oneline := cmdstr1 ; {* add white char at the end - why ??? *}
+                
+                new(listptr^.lptt);
+                listptr^.lptt^.lpth:=listptr^.lptt;
+                listptr:=listptr^.lptt;
+                
+                listptr^.oneline := cmdstr2;
+                listptr^.lptt:=NIL;             
+                line:=listptr^.oneline;
+                len:=length(line);
+                cpt1:=FND('$','$',1);
+                if NOT xx then
+                begin
+                    cpt2:=FND(';',';',cpt1);
+                end; 
+            end; {* while not xx *}
+            {* restore broken links in a line list *}
+            listptr^.lptt := tail_ptr;
+            if listptr^.lptt<> nil then
+            begin
+               listptr^.lptt^.lpth := listptr;  
+            end;
+        end; {* FND(',') *}
+      end; {* FND('$')  *}    
+    end; {* not xx *}
+    listptr:=listptr^.lptt;
+  end; {* while listptr<>NIL do *}
+ 
  END;
 
 {***************************************************************************}
@@ -598,7 +642,7 @@ END;
   WRITELN(RESULTS,'******************** TASK LIST **************************');
   WHILE tp<>NIL DO
   BEGIN
-   WRITELN(RESULTS,' TASK:',tp^.numberMajor,'.',tp^.numberMiddle,'.',tp^.numberMinor);
+   WRITELN(RESULTS,' TASK:',tp^.numberMajor,'.',tp^.numberMiddle,'.',tp^.numberMinor,' ', tp^.task_name);
    WRITELN(RESULTS,' COMPUTE  DEF [tp^.CDEF_PT] ');
    LIST_LISTA(tp^.CDEF_PT);
    WRITELN(RESULTS,' COMANDS  [tp^.COMD_PT]    ');
@@ -654,7 +698,7 @@ BEGIN
 
 {***           start outer loop - frequency                            ***}
   WRITELN(RESULTS,'****************** VARYING COMPONENTS *********************');
-  WRITELN(RESULTS,'TASK:',j^.numberMajor,'.',j^.numberMiddle,'.',j^.numberMinor);
+  WRITELN(RESULTS,'TASK:',j^.numberMajor,'.',j^.numberMiddle,'.',j^.numberMinor, ' ', j^.task_name);
   f_pt:=j^.FREQ_PT;
   WHILE f_pt<>NIL DO
   BEGIN
@@ -841,10 +885,10 @@ BEGIN
        if ( y_ptr^.yvar = PARAM) then begin
           par_pt := y_ptr^.yparpt ;
           if ( par_pt^.PAR_complex ) then begin
-            WRITELN(FTEXT,tab_str+y_ptr^.yname,'=',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
+            WRITELN(FTEXT,tab_str+y_ptr^.yname,' = ',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
           end
           else begin
-            WRITELN(FTEXT,tab_str+y_ptr^.yname,'=',par_pt^.PVR_CURR_PT^.value );
+            WRITELN(FTEXT,tab_str+y_ptr^.yname,' = ',par_pt^.PVR_CURR_PT^.value );
           end
        end;
        y_ptr:=y_ptr^.ynext;
@@ -856,10 +900,10 @@ BEGIN
        if ( g_ptr^.gvar = PARAM) then begin
           par_pt := g_ptr^.gparpt ;
           if ( par_pt^.PAR_complex ) then begin
-            WRITELN(FTEXT,tab_str+g_ptr^.gname,'=',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
+            WRITELN(FTEXT,tab_str+g_ptr^.gname,' = ',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
           end
           else begin
-            WRITELN(FTEXT,tab_str+g_ptr^.gname,'=',par_pt^.PVR_CURR_PT^.value );
+            WRITELN(FTEXT,tab_str+g_ptr^.gname,' = ',par_pt^.PVR_CURR_PT^.value );
           end
        end;
        g_ptr:=g_ptr^.gnext;
@@ -871,10 +915,10 @@ BEGIN
        if ( z_ptr^.zvar = PARAM) then begin
           par_pt := z_ptr^.zparpt ;
           if ( par_pt^.PAR_complex ) then begin
-            WRITELN(FTEXT,tab_str+z_ptr^.zname,'=',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
+            WRITELN(FTEXT,tab_str+z_ptr^.zname,' = ',par_pt^.PVC_CURR_PT^.valre,' + %i*(',par_pt^.PVC_CURR_PT^.valim,')' );
           end
           else begin
-            WRITELN(FTEXT,tab_str+z_ptr^.zname,'=',par_pt^.PVR_CURR_PT^.value );
+            WRITELN(FTEXT,tab_str+z_ptr^.zname,' = ',par_pt^.PVR_CURR_PT^.value );
           end
        end;
        z_ptr:=z_ptr^.znext;
@@ -885,7 +929,7 @@ BEGIN
   begin
        if ( r_ptr^.rvar = PARAM) then begin
           par_pt := r_ptr^.rparpt ;
-          WRITELN(FTEXT,tab_str+r_ptr^.rname,'=',par_pt^.PVR_CURR_PT^.value );
+          WRITELN(FTEXT,tab_str+r_ptr^.rname,' = ',par_pt^.PVR_CURR_PT^.value );
        end;
        r_ptr:=r_ptr^.rnext;
   end;
@@ -895,7 +939,7 @@ BEGIN
   begin
        if ( c_ptr^.cvar = PARAM) then begin
           par_pt := c_ptr^.cparpt ;
-          WRITELN(FTEXT,tab_str+c_ptr^.cname,'=',par_pt^.PVR_CURR_PT^.value );
+          WRITELN(FTEXT,tab_str+c_ptr^.cname,' = ',par_pt^.PVR_CURR_PT^.value );
        end;
        c_ptr:=c_ptr^.cnext;
   end;
@@ -905,7 +949,7 @@ BEGIN
   begin
        if ( l_ptr^.lvar = PARAM) then begin
           par_pt := l_ptr^.lparpt ;
-          WRITELN(FTEXT,tab_str+l_ptr^.lname,'=',par_pt^.PVR_CURR_PT^.value );
+          WRITELN(FTEXT,tab_str+l_ptr^.lname,' = ',par_pt^.PVR_CURR_PT^.value );
        end;
        l_ptr:=l_ptr^.lnext;
   end;
